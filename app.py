@@ -26,7 +26,18 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v15.1 - Accurate Reality Engine")
+    st.caption("UI Prototype v16.0 - Live EV & Dynamic Colors")
+
+# --- TEAM COLOR DICTIONARY ---
+TEAM_COLORS = {
+    'AZ': '#A71930', 'ARI': '#A71930', 'ATL': '#13274F', 'BAL': '#DF4601', 'BOS': '#BD3039',
+    'CHC': '#0E3386', 'CWS': '#27251F', 'CIN': '#C6011F', 'CLE': '#E31937', 'COL': '#33006F',
+    'DET': '#0C2340', 'HOU': '#EB6E1F', 'KC': '#004687', 'LAA': '#BA0021', 'LAD': '#005A9C',
+    'MIA': '#00A3E0', 'MIL': '#12284B', 'MIN': '#D31145', 'NYM': '#FF5910', 'NYY': '#003087',
+    'OAK': '#003831', 'PHI': '#E81828', 'PIT': '#FDB827', 'SD': '#2F241D', 'SF': '#FD5A1E',
+    'SEA': '#005C5C', 'STL': '#C41E3A', 'TB': '#092C5C', 'TEX': '#003278', 'TOR': '#134A8E',
+    'WSH': '#AB0003', 'AWY': '#1C1C1E', 'HME': '#1C1C1E'
+}
 
 # 4. MLB STATS-API ENGINE
 @st.cache_data(ttl=60) 
@@ -52,6 +63,8 @@ def fetch_mlb_game_data(selected_date):
         game_pk = target_game.get('gamePk')
         away_team = target_game.get('teams', {}).get('away', {}).get('team', {}).get('name', 'Away')
         home_team = target_game.get('teams', {}).get('home', {}).get('team', {}).get('name', 'Home')
+        
+        # Safely extract abbreviations
         away_abbr = target_game.get('teams', {}).get('away', {}).get('team', {}).get('abbreviation', 'AWY')
         home_abbr = target_game.get('teams', {}).get('home', {}).get('team', {}).get('abbreviation', 'HME')
         matchup_text = f"{away_team} @ {home_team}"
@@ -116,19 +129,55 @@ if page == "Live Game":
         pitcher_id = active_play['matchup']['pitcher']['id']
         pitcher_name = active_play['matchup']['pitcher']['fullName']
         
-        inning = f"{'▲' if active_play['about']['halfInning'] == 'top' else '▼'} {active_play['about']['inning']}"
+        half_inning = active_play['about']['halfInning']
+        inning = f"{'▲' if half_inning == 'top' else '▼'} {active_play['about']['inning']}"
         away_score = active_play['result']['awayScore']
         home_score = active_play['result']['homeScore']
         
-        # Calculate Outs *Before* the at-bat starts
-        start_outs = 0
+        # Determine active team colors based on Top/Bottom of inning
+        # Top: Away is hitting, Home is pitching
+        # Bottom: Home is hitting, Away is pitching
+        if half_inning == 'top':
+            batter_color = TEAM_COLORS.get(away_abbr, '#1C1C1E')
+            pitcher_color = TEAM_COLORS.get(home_abbr, '#1C1C1E')
+        else:
+            batter_color = TEAM_COLORS.get(home_abbr, '#1C1C1E')
+            pitcher_color = TEAM_COLORS.get(away_abbr, '#1C1C1E')
+            
+        away_team_color = TEAM_COLORS.get(away_abbr, '#1C1C1E')
+        home_team_color = TEAM_COLORS.get(home_abbr, '#1C1C1E')
+
         current_inning_num = active_play['about']['inning']
-        current_half = active_play['about']['halfInning']
         current_atBatIndex = active_play['about']['atBatIndex']
         
+        start_outs = 0
         for p in plays:
-            if p['about']['halfInning'] == current_half and p['about']['inning'] == current_inning_num and p['about']['atBatIndex'] < current_atBatIndex:
+            if p['about']['halfInning'] == half_inning and p['about']['inning'] == current_inning_num and p['about']['atBatIndex'] < current_atBatIndex:
                 start_outs = p.get('count', {}).get('outs', 0)
+
+        # --- OUR CUSTOM "SAVANT" ENGINE (Game EV & Whiffs) ---
+        batter_evs = []
+        batter_game_whiffs = 0
+        pitcher_game_whiffs = 0
+        
+        for p in plays:
+            if p['about']['atBatIndex'] <= current_atBatIndex:
+                # Batter Checks
+                if p['matchup']['batter']['id'] == batter_id:
+                    for e in p.get('playEvents', []):
+                        if 'hitData' in e and 'launchSpeed' in e['hitData']:
+                            batter_evs.append(e['hitData']['launchSpeed'])
+                        desc = e.get('details', {}).get('description', '')
+                        if desc in ['Swinging Strike', 'Swinging Strike (Blocked)', 'Missed Bunt']:
+                            batter_game_whiffs += 1
+                # Pitcher Checks
+                if p['matchup']['pitcher']['id'] == pitcher_id:
+                    for e in p.get('playEvents', []):
+                        desc = e.get('details', {}).get('description', '')
+                        if desc in ['Swinging Strike', 'Swinging Strike (Blocked)', 'Missed Bunt']:
+                            pitcher_game_whiffs += 1
+                            
+        batter_avg_ev = round(sum(batter_evs)/len(batter_evs), 1) if batter_evs else "--"
 
         # --- SMART NAME PARSER FOR INNING SUMMARY ---
         def get_last_name(full_name):
@@ -138,20 +187,15 @@ if page == "Live Game":
             return parts[-1]
 
         # --- PARSE INNING SUMMARY ---
-        inning_plays = [p for p in plays if p['about']['inning'] == current_inning_num and p['about']['halfInning'] == current_half and p['about']['atBatIndex'] <= current_atBatIndex]
+        inning_plays = [p for p in plays if p['about']['inning'] == current_inning_num and p['about']['halfInning'] == half_inning and p['about']['atBatIndex'] <= current_atBatIndex]
         inning_summary_html = ""
         for i, p in enumerate(inning_plays):
             b_name = get_last_name(p['matchup']['batter']['fullName'])
             result_event = p['result'].get('event', 'In Progress')
-            
             inning_summary_html += f"""
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <div style="font-size: 13px; font-weight: 800; color: #13274F; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <div style="font-size: 13px; font-weight: 800; color: {batter_color}; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     <span style="color: #8E8E93; font-weight: 700; margin-right: 6px;">{i+1}</span>{b_name} <span style="font-size: 11px; font-weight: 600; color: #1C1C1E; margin-left: 6px;">{result_event}</span>
-                </div>
-                <div style="display: flex; gap: 15px; text-align: right; flex-shrink: 0;">
-                    <div style="font-size: 12px; font-weight: 700; color: #1C1C1E; width: 35px;"><span style="background-color: #E5E5EA; padding: 2px 4px; border-radius: 4px;">--</span></div>
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; width: 35px;"><span style="background-color: #E5E5EA; padding: 2px 4px; border-radius: 4px;">--</span></div>
                 </div>
             </div>
             """
@@ -164,7 +208,6 @@ if page == "Live Game":
                 pitcher_pitches.extend(pitch_events)
                 
         live_pitch_count = len(pitcher_pitches)
-        
         pitch_counts = {}
         pitch_velos = {}
         pitch_colors = {'FF': '#D22D49', 'SI': '#FF8200', 'FC': '#933F2C', 'CU': '#00D1ED', 'SL': '#E3E1A6', 'CH': '#1DBE3A', 'FS': '#1DBE3A', 'ST': '#E3E1A6', 'SV': '#E3E1A6'}
@@ -187,15 +230,12 @@ if page == "Live Game":
             avg_v = round(sum(pitch_velos[code]) / len(pitch_velos[code]), 1) if pitch_velos[code] else '--'
             color = pitch_colors.get(code, '#1C1C1E')
             usage_html += f"""
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; text-align: center; align-items: center; padding: 6px 0;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; align-items: center; padding: 6px 0;">
                 <div style="font-size: 14px; font-weight: 800; color: {color}; text-align: left;">{code}</div>
                 <div style="font-size: 14px; font-weight: 800; color: #1C1C1E;">{pct}%</div>
-                <div style="font-size: 13px; font-weight: 700; color: #8E8E93;">--</div>
                 <div style="font-size: 13px; font-weight: 700; color: #1C1C1E;">{avg_v}</div>
             </div>
             """
-        if not usage_html:
-            usage_html = "<div style='padding: 10px; color: #8E8E93; font-size: 13px; font-style: italic;'>Awaiting first pitch...</div>"
 
         # --- PARSE PITCH SEQUENCE & LOCATION ---
         current_pitch_events = [e for e in active_play.get('playEvents', []) if e.get('isPitch')]
@@ -219,11 +259,9 @@ if page == "Live Game":
                 <div style="font-size: 14px; font-weight: 800; color: {p_color}; text-align: left;">{p_code}</div>
                 <div style="font-size: 13px; font-weight: 600; color: #1C1C1E; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{p_result}</div>
                 <div style="font-size: 13px; font-weight: 700; color: #1C1C1E;">{p_velo}</div>
-                <div><span style="font-size: 12px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 6px;">--</span></div>
+                <div><span style="font-size: 12px; font-weight: 800; color: #8E8E93; background-color: #E5E5EA; border-radius: 4px; padding: 2px 6px;">--</span></div>
             </div>
             """
-        if not pitch_sequence_html:
-            pitch_sequence_html = "<div style='padding: 10px; color: #8E8E93; font-size: 13px; font-style: italic;'>No pitch data available.</div>"
 
         # --- PARSE BOXSCORE STATS ---
         b_data = players_data.get(batter_id, {})
@@ -234,23 +272,11 @@ if page == "Live Game":
         b_bb = b_data.get('game_bat', {}).get('baseOnBalls', 0)
         b_k = b_data.get('game_bat', {}).get('strikeOuts', 0)
         b_avg = b_data.get('season_bat', {}).get('avg', '.000')
-        b_season_bb = b_data.get('season_bat', {}).get('baseOnBalls', 0)
-        b_season_k = b_data.get('season_bat', {}).get('strikeOuts', 0)
-        b_season_pa = b_data.get('season_bat', {}).get('plateAppearances', 1)
         
-        b_bb_pct = f"{round((b_season_bb / b_season_pa) * 100, 1)}%" if b_season_pa > 0 else "0.0%"
-        b_k_pct = f"{round((b_season_k / b_season_pa) * 100, 1)}%" if b_season_pa > 0 else "0.0%"
-
         p_ip = p_data.get('game_pitch', {}).get('inningsPitched', '0.0')
         p_k = p_data.get('game_pitch', {}).get('strikeOuts', 0)
         p_bb = p_data.get('game_pitch', {}).get('baseOnBalls', 0)
         p_season_ip = p_data.get('season_pitch', {}).get('inningsPitched', '0.0')
-        p_season_k = p_data.get('season_pitch', {}).get('strikeOuts', 0)
-        p_season_bb = p_data.get('season_pitch', {}).get('baseOnBalls', 0)
-        p_season_bf = p_data.get('season_pitch', {}).get('battersFaced', 1)
-
-        p_k_pct = f"{round((p_season_k / p_season_bf) * 100, 1)}%" if p_season_bf > 0 else "0.0%"
-        p_bb_pct = f"{round((p_season_bb / p_season_bf) * 100, 1)}%" if p_season_bf > 0 else "0.0%"
 
     else:
         st.warning("No play-by-play data available for this game.")
@@ -270,11 +296,11 @@ if page == "Live Game":
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 25px; border-right: 1px solid #E5E5EA; min-width: 360px;">
                 <div style="display: flex; gap: 20px; align-items: center;">
                     <div style="text-align: center;">
-                        <div style="font-size: 16px; font-weight: 800; color: #1C1C1E;">{away_abbr}</div>
+                        <div style="font-size: 16px; font-weight: 800; color: {away_team_color};">{away_abbr}</div>
                         <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">{away_score}</div>
                     </div>
                     <div style="text-align: center;">
-                        <div style="font-size: 16px; font-weight: 800; color: #A71930;">{home_abbr}</div>
+                        <div style="font-size: 16px; font-weight: 800; color: {home_team_color};">{home_abbr}</div>
                         <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">{home_score}</div>
                     </div>
                 </div>
@@ -292,16 +318,16 @@ if page == "Live Game":
                 <div style="background-color: #F9F9F9; padding: 6px 12px; border-radius: 8px; border: 1px solid #E5E5EA; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         <span style="color: #8E8E93; font-size: 12px; font-weight: 700;">AB:</span> 
-                        <span style="color: #13274F; font-size: 14px; font-weight: 800; margin-left: 4px;">{batter_name}</span>
+                        <span style="color: {batter_color}; font-size: 14px; font-weight: 800; margin-left: 4px;">{batter_name}</span>
                     </div>
                     <div style="color: #1C1C1E; font-size: 13px; font-weight: 700; margin-left: 10px;">
-                        <span style="color: #8E8E93; margin-right: 4px;">wRC+:</span><span style="background-color: #E5E5EA; padding: 2px 6px; border-radius: 4px;">--</span>
+                        <span style="color: #8E8E93; margin-right: 4px;">wRC+:</span><span style="background-color: #E5E5EA; color: #8E8E93; padding: 2px 6px; border-radius: 4px;">--</span>
                     </div>
                 </div>
                 <div style="background-color: #F9F9F9; padding: 6px 12px; border-radius: 8px; border: 1px solid #E5E5EA; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         <span style="color: #8E8E93; font-size: 12px; font-weight: 700;">P:</span> 
-                        <span style="color: #A71930; font-size: 14px; font-weight: 800; margin-left: 4px;">{pitcher_name}</span>
+                        <span style="color: {pitcher_color}; font-size: 14px; font-weight: 800; margin-left: 4px;">{pitcher_name}</span>
                     </div>
                     <div style="color: #1C1C1E; font-size: 13px; font-weight: 700; margin-left: 10px;">
                         <span style="color: #8E8E93; margin-right: 4px;">PC:</span>{live_pitch_count}
@@ -312,10 +338,6 @@ if page == "Live Game":
             <div style="border-left: 1px solid #E5E5EA; padding: 10px 20px; display: flex; flex-direction: column; min-width: 320px; background-color: #FAFAFA; overflow-y: auto;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <div style="font-size: 11px; font-weight: 800; color: #8E8E93; text-transform: uppercase;">Inning Summary</div>
-                    <div style="display: flex; gap: 15px; text-align: right;">
-                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93; width: 35px;">EV</div>
-                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93; width: 35px;">xBA</div>
-                    </div>
                 </div>
                 {inning_summary_html}
             </div>
@@ -331,11 +353,10 @@ if page == "Live Game":
             st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Usage</div>', unsafe_allow_html=True)
             st.markdown(f"""
             <div style="background-color: white; border-radius: 12px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #E5E5EA; height: 100%;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; text-align: center; border-bottom: 1px solid #E5E5EA; padding-bottom: 8px; margin-bottom: 8px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; border-bottom: 1px solid #E5E5EA; padding-bottom: 8px; margin-bottom: 8px;">
                     <div style="font-size: 11px; font-weight: 700; color: #8E8E93; text-align: left;">PITCH</div>
-                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">GAME</div>
-                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">SEASON</div>
-                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">VELO</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">GAME %</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">AVG VELO</div>
                 </div>
                 {usage_html}
             </div>
@@ -346,10 +367,8 @@ if page == "Live Game":
             fig, ax = plt.subplots(figsize=(3, 3))
             fig.patch.set_facecolor('#F2F2F7') 
             ax.set_facecolor('#F2F2F7')
-            # Slightly widened margins so MLB's literal dirt pitches don't clip the bottom
             ax.set_xlim(-2.5, 2.5)
             ax.set_ylim(0, 5)
-            
             plate = patches.Polygon([(-0.71, 0.1), (0.71, 0.1), (0.71, 0.3), (0, 0.5), (-0.71, 0.3)], closed=True, facecolor='#E5E5EA', edgecolor='#C7C7CC')
             ax.add_patch(plate)
             zone = patches.Rectangle((-0.71, 1.5), 1.42, 2.0, linewidth=2, edgecolor='#8E8E93', facecolor='none', linestyle='-')
@@ -384,12 +403,12 @@ if page == "Live Game":
         
         with stat_col1:
             st.markdown(f"""
-            <div style="background-color: #13274F; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">AT THE PLATE</div>
+            <div style="background-color: {batter_color}; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">AT THE PLATE</div>
             <div style="background-color: white; border-radius: 0 0 12px 12px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: grid; grid-template-columns: 2.2fr 0.8fr 0.8fr 0.8fr 0.8fr 1.2fr 1fr; text-align: center; align-items: center;">
                 <div style="text-align: left;">
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">BATTER</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #13274F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{batter_name}</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">Season</div>
+                    <div style="font-size: 15px; font-weight: 800; color: {batter_color}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{batter_name}</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">Game</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">AB</div>
@@ -404,34 +423,34 @@ if page == "Live Game":
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">BB</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{b_bb}</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">{b_bb_pct}</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">--</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">K</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{b_k}</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">{b_k_pct}</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">--</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">AVG EV</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">--</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">--</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{batter_avg_ev}</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">--</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">WHIFFS</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">--</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">--</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{batter_game_whiffs}</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">--</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
         with stat_col2:
             st.markdown(f"""
-            <div style="background-color: #A71930; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">ON THE MOUND</div>
+            <div style="background-color: {pitcher_color}; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">ON THE MOUND</div>
             <div style="background-color: white; border-radius: 0 0 12px 12px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr 1.2fr 1fr; text-align: center; align-items: center;">
                 <div style="text-align: left;">
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">PITCHER</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #A71930; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{pitcher_name}</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">Season</div>
+                    <div style="font-size: 15px; font-weight: 800; color: {pitcher_color}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{pitcher_name}</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">Game</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">IP</div>
@@ -441,22 +460,22 @@ if page == "Live Game":
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">K</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{p_k}</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">{p_k_pct}</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">--</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">BB</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{p_bb}</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">{p_bb_pct}</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">--</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">WHIFFS</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">--</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">--</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{pitcher_game_whiffs}</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">--</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">STUFF+</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">--</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">--</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">--</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
