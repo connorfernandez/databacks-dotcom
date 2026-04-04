@@ -28,7 +28,7 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v9.0 - Inning Context")
+    st.caption("UI Prototype v9.1 - Footer Cutoff Fix")
 
 # 4. MAIN ROUTING LOGIC
 if page == "Live Game":
@@ -133,7 +133,7 @@ if page == "Live Game":
         with bot_col1:
             st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Game Situation</div>', unsafe_allow_html=True)
             
-            # Integrated Scorebug with Footer
+            # Integrated Scorebug with Footer (Increased height to 165)
             components.html("""
             <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; border: 1px solid #E5E5EA; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; flex-direction: column; overflow: hidden;">
                 <div style="padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; height: 90px;">
@@ -167,7 +167,7 @@ if page == "Live Game":
                     <div><span style="color: #8E8E93;">P:</span> <span style="color: #A71930;">Eduardo Rodriguez</span> <span style="margin-left: 15px; color: #8E8E93;">PC:</span> 72</div>
                 </div>
             </div>
-            """, height=145)
+            """, height=165)
 
             # Inning Summary HTML Grid
             st.write("")
