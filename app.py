@@ -3,6 +3,8 @@ import pandas as pd
 import streamlit.components.v1 as components
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import datetime
+import requests
 
 # 1. PAGE SETUP
 st.set_page_config(page_title="Databacks", page_icon="🐍", layout="wide", initial_sidebar_state="expanded")
@@ -20,6 +22,9 @@ st.markdown("""
     button[data-baseweb="tab"] { background-color: transparent !important; border-radius: 8px !important; color: #1C1C1E !important; font-weight: 600 !important; padding: 8px 16px !important; border: none !important; }
     button[data-baseweb="tab"][aria-selected="true"] { background-color: #FFFFFF !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; }
 
+    /* Date Picker Styling */
+    div[data-baseweb="input"] { border-radius: 8px !important; }
+    
     #MainMenu {visibility: hidden;} footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
@@ -28,13 +33,36 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v12.0 - Complete Custom Grids")
+    st.caption("UI Prototype v13.0 - API Engine & Timeline")
 
-# 4. MAIN ROUTING LOGIC
+# 4. MLB STATS-API ENGINE SKELETON
+@st.cache_data(ttl=30) # Caches data for 30 seconds so we don't spam the MLB servers
+def fetch_mlb_data(selected_date):
+    # TODO: We will replace this dummy data block with the real requests.get('https://statsapi.mlb.com/api/v1.1/game/...')
+    # For now, it securely holds our pristine broadcast layout data.
+    return True
+
+# 5. MAIN ROUTING LOGIC
 if page == "Live Game":
     
-    st.markdown("<h2 style='color: #1C1C1E; font-weight: 400; margin-bottom: 0px;'>Braves vs. Dbacks - 4/3/2026</h2>", unsafe_allow_html=True)
+    # --- DYNAMIC HEADER & DATE PICKER ---
+    header_col1, header_col2 = st.columns([4, 1])
+    with header_col1:
+        st.markdown("<h2 style='color: #1C1C1E; font-weight: 400; margin-bottom: 0px;'>Braves vs. Dbacks</h2>", unsafe_allow_html=True)
+    with header_col2:
+        # Date Picker locked between Opening Day 2026 and Today
+        selected_date = st.date_input(
+            "Game Date", 
+            value=datetime.date(2026, 4, 3), 
+            min_value=datetime.date(2026, 3, 26),
+            max_value=datetime.date.today(),
+            label_visibility="collapsed" # Hides the label for the clean Apple UI look
+        )
+        
     st.write("") 
+    
+    # Call the API Engine (Currently doing nothing but ready for action)
+    game_data = fetch_mlb_data(selected_date)
     
     tab1, tab2, tab3 = st.tabs(["Live AB", "Scoreboard", "Box Score"])
     
@@ -122,7 +150,7 @@ if page == "Live Game":
         # --- ROW 2: THE LIVE AT-BAT (3 Columns) ---
         action_col1, action_col2, action_col3 = st.columns([1.2, 0.8, 1.2])
 
-        # LEFT: PITCH USAGE (Now with VELO)
+        # LEFT: PITCH USAGE
         with action_col1:
             st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Usage</div>', unsafe_allow_html=True)
             st.markdown("""
@@ -187,7 +215,7 @@ if page == "Live Game":
             ax.axis('off')
             st.pyplot(fig, transparent=True)
 
-        # RIGHT: PITCH SEQUENCE (Now a Custom HTML Grid)
+        # RIGHT: PITCH SEQUENCE 
         with action_col3:
             st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Sequence</div>', unsafe_allow_html=True)
             
