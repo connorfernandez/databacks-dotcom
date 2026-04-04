@@ -28,7 +28,7 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v10.0 - Broadcast Layout")
+    st.caption("UI Prototype v11.0 - Consolidated Layout")
 
 # 4. MAIN ROUTING LOGIC
 if page == "Live Game":
@@ -41,11 +41,12 @@ if page == "Live Game":
     with tab1:
         st.write("") 
         
-        # --- ROW 1: THE SCOREBUG (Full Width Focal Point) ---
+        # --- ROW 1: THE SCOREBUG (Ultimate Consolidated Top Bar) ---
         st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Game Situation</div>', unsafe_allow_html=True)
         components.html("""
-        <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; border: 1px solid #E5E5EA; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; flex-direction: column; overflow: hidden;">
-            <div style="padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; height: 90px;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; border: 1px solid #E5E5EA; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; align-items: stretch; height: 110px; overflow: hidden;">
+            
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 25px; border-right: 1px solid #E5E5EA; min-width: 360px;">
                 <div style="display: flex; gap: 20px; align-items: center;">
                     <div style="text-align: center;">
                         <div style="font-size: 16px; font-weight: 800; color: #1C1C1E;">ATL</div>
@@ -56,7 +57,7 @@ if page == "Live Game":
                         <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">0</div>
                     </div>
                 </div>
-                <div style="font-size: 20px; font-weight: 800; color: #1C1C1E; border-left: 1px solid #E5E5EA; border-right: 1px solid #E5E5EA; padding: 0 25px;">
+                <div style="font-size: 20px; font-weight: 800; color: #1C1C1E;">
                     ▲ 6th
                 </div>
                 <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
@@ -71,40 +72,67 @@ if page == "Live Game":
                     </div>
                 </div>
             </div>
-            <div style="background-color: #F9F9F9; border-top: 1px solid #E5E5EA; padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: #1C1C1E;">
-                <div><span style="color: #8E8E93;">AB:</span> <span style="color: #13274F;">Drake Baldwin</span> <span style="margin-left: 15px; color: #8E8E93;">wRC+:</span> 112</div>
-                <div><span style="color: #8E8E93;">P:</span> <span style="color: #A71930;">Eduardo Rodriguez</span> <span style="margin-left: 15px; color: #8E8E93;">PC:</span> 72</div>
+
+            <div style="display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 0 20px; flex-grow: 1;">
+                <div style="background-color: #F9F9F9; padding: 6px 12px; border-radius: 8px; border: 1px solid #E5E5EA; display: flex; justify-content: space-between; align-items: center;">
+                    <div><span style="color: #8E8E93; font-size: 12px; font-weight: 700;">AB:</span> <span style="color: #13274F; font-size: 14px; font-weight: 800; margin-left: 4px;">Drake Baldwin</span></div>
+                    <div style="color: #1C1C1E; font-size: 13px; font-weight: 700;"><span style="color: #8E8E93; margin-right: 4px;">wRC+:</span>112</div>
+                </div>
+                <div style="background-color: #F9F9F9; padding: 6px 12px; border-radius: 8px; border: 1px solid #E5E5EA; display: flex; justify-content: space-between; align-items: center;">
+                    <div><span style="color: #8E8E93; font-size: 12px; font-weight: 700;">P:</span> <span style="color: #A71930; font-size: 14px; font-weight: 800; margin-left: 4px;">Eduardo Rodriguez</span></div>
+                    <div style="color: #1C1C1E; font-size: 13px; font-weight: 700;"><span style="color: #8E8E93; margin-right: 4px;">PC:</span>72</div>
+                </div>
             </div>
+
+            <div style="border-left: 1px solid #E5E5EA; padding: 0 25px; display: flex; flex-direction: column; justify-content: center; min-width: 270px; background-color: #FAFAFA;">
+                <div style="font-size: 11px; font-weight: 800; color: #8E8E93; text-transform: uppercase; margin-bottom: 8px;">Inning Summary</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <div style="font-size: 13px; font-weight: 800; color: #13274F;"><span style="color: #8E8E93; font-weight: 700; margin-right: 6px;">1</span>Harris II</div>
+                    <div style="font-size: 12px; font-weight: 600; color: #1C1C1E;">Single <span style="color: #8E8E93; margin-left: 6px; font-weight: 700;">.780</span></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-size: 13px; font-weight: 800; color: #13274F;"><span style="color: #8E8E93; font-weight: 700; margin-right: 6px;">2</span>Riley</div>
+                    <div style="font-size: 12px; font-weight: 600; color: #1C1C1E;">Flyout <span style="color: #8E8E93; margin-left: 6px; font-weight: 700;">.040</span></div>
+                </div>
+            </div>
+
         </div>
-        """, height=165)
+        """, height=135)
 
         st.write("")
 
         # --- ROW 2: THE LIVE AT-BAT (3 Columns) ---
         action_col1, action_col2, action_col3 = st.columns([1.2, 0.8, 1.2])
 
-        # LEFT: INNING SUMMARY
+        # LEFT: VERTICAL PITCH USAGE
         with action_col1:
-            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Inning Summary</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Usage</div>', unsafe_allow_html=True)
             st.markdown("""
-            <div style="background-color: white; border-radius: 12px; padding: 12px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #E5E5EA;">
-                <div style="display: grid; grid-template-columns: 0.5fr 2fr 2fr 1fr; border-bottom: 1px solid #E5E5EA; padding-bottom: 8px; margin-bottom: 8px;">
-                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">#</div>
-                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">PLAYER</div>
-                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">RESULT</div>
-                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93; text-align: right;">xBA</div>
+            <div style="background-color: white; border-radius: 12px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #E5E5EA;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; border-bottom: 1px solid #E5E5EA; padding-bottom: 8px; margin-bottom: 8px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93; text-align: left;">PITCH</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">GAME</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">SEASON</div>
                 </div>
-                <div style="display: grid; grid-template-columns: 0.5fr 2fr 2fr 1fr; padding: 4px 0; align-items: center;">
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93;">1</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #13274F;">Harris II</div>
-                    <div style="font-size: 13px; font-weight: 600; color: #1C1C1E;">Single</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; text-align: right;">.780</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; align-items: center; padding: 6px 0;">
+                    <div style="font-size: 14px; font-weight: 800; color: #FF8200; text-align: left;">SI</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E;">44%</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93;">41%</div>
                 </div>
-                <div style="display: grid; grid-template-columns: 0.5fr 2fr 2fr 1fr; padding: 4px 0; align-items: center;">
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93;">2</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #13274F;">Riley</div>
-                    <div style="font-size: 13px; font-weight: 600; color: #1C1C1E;">Flyout</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; text-align: right;">.040</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; align-items: center; padding: 6px 0;">
+                    <div style="font-size: 14px; font-weight: 800; color: #933F2C; text-align: left;">FC</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E;">26%</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93;">22%</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; align-items: center; padding: 6px 0;">
+                    <div style="font-size: 14px; font-weight: 800; color: #00D1ED; text-align: left;">CU</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E;">18%</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93;">15%</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; align-items: center; padding: 6px 0;">
+                    <div style="font-size: 14px; font-weight: 800; color: #D22D49; text-align: left;">FF</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E;">12%</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93;">22%</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -136,38 +164,8 @@ if page == "Live Game":
             ax.axis('off')
             st.pyplot(fig, transparent=True)
 
-        # RIGHT: PITCH USAGE & SEQUENCE
+        # RIGHT: PITCH SEQUENCE
         with action_col3:
-            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Usage</div>', unsafe_allow_html=True)
-            st.markdown("""
-            <div style="background-color: white; border-radius: 12px; padding: 12px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; justify-content: space-between; text-align: center; border: 1px solid #E5E5EA; margin-bottom: 20px;">
-                <div style="text-align: left; display: flex; flex-direction: column; justify-content: center;">
-                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E;">Game</div>
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 4px;">Season</div>
-                </div>
-                <div>
-                    <div style="font-size: 14px; font-weight: 800; color: #FF8200;">SI</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">44%</div>
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">41%</div>
-                </div>
-                <div>
-                    <div style="font-size: 14px; font-weight: 800; color: #933F2C;">FC</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">26%</div>
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">22%</div>
-                </div>
-                <div>
-                    <div style="font-size: 14px; font-weight: 800; color: #00D1ED;">CU</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">18%</div>
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">15%</div>
-                </div>
-                <div>
-                    <div style="font-size: 14px; font-weight: 800; color: #D22D49;">FF</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">12%</div>
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">22%</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
             st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Sequence</div>', unsafe_allow_html=True)
             pitch_seq = pd.DataFrame({
                 "#": [1, 2, 3],
