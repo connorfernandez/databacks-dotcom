@@ -28,7 +28,7 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v6.1 - Responsive Scorebug")
+    st.caption("UI Prototype v7.0 - Realistic Gradients")
 
 # 4. MAIN ROUTING LOGIC
 if page == "Live Game":
@@ -47,16 +47,16 @@ if page == "Live Game":
         with top_col1:
             st.markdown("""
             <div style="background-color: #13274F; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">AT THE PLATE</div>
-            <div style="background-color: white; border-radius: 0 0 12px 12px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr 1.2fr 1fr; text-align: center; align-items: center;">
+            <div style="background-color: white; border-radius: 0 0 12px 12px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: grid; grid-template-columns: 2.2fr 0.8fr 0.8fr 0.8fr 0.8fr 1.2fr 1.2fr 1fr; text-align: center; align-items: center;">
                 <div style="text-align: left;">
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">BATTER</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">Drake Baldwin</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #13274F;">Drake Baldwin</div>
                     <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">Season</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">AB</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">2</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">214</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">.284</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">H</div>
@@ -64,19 +64,29 @@ if page == "Live Game":
                     <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">61</div>
                 </div>
                 <div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">BB</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">1</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">24</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">K</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">1</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #F1A7AA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">16.5%</div>
+                </div>
+                <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">AVG EV</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">105.0</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">91.2</div>
+                    <div style="font-size: 13px; font-weight: 800; color: white; background-color: #D22D49; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">91.2</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">HARD HITS</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">1</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">42.1%</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #F1A7AA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">42.1%</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">WHIFFS</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">0</div>
-                    <div style="font-size: 13px; font-weight: 800; color: white; background-color: #D22D49; border-radius: 4px; padding: 2px 6px; display: inline-block; margin-top: 2px;">14.5%</div>
+                    <div style="font-size: 13px; font-weight: 800; color: white; background-color: #D22D49; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">14.5%</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -84,10 +94,10 @@ if page == "Live Game":
         with top_col2:
             st.markdown("""
             <div style="background-color: #A71930; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">ON THE MOUND</div>
-            <div style="background-color: white; border-radius: 0 0 12px 12px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr 1fr 1fr; text-align: center; align-items: center;">
+            <div style="background-color: white; border-radius: 0 0 12px 12px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr 1.2fr 1fr; text-align: center; align-items: center;">
                 <div style="text-align: left;">
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">PITCHER</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">Eduardo Rodriguez</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #A71930;">Eduardo Rodriguez</div>
                     <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">Season</div>
                 </div>
                 <div>
@@ -98,22 +108,22 @@ if page == "Live Game":
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">K</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">4</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">24.5%</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #F1A7AA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">24.5%</div>
                 </div>
                 <div>
-                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">PITCHES</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">72</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">15.8</div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">BB</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">2</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">7.8%</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">WHIFFS</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">6</div>
-                    <div style="font-size: 13px; font-weight: 800; color: white; background-color: #D22D49; border-radius: 4px; padding: 2px 6px; display: inline-block; margin-top: 2px;">28.5%</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #F1A7AA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">28.5%</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">STUFF+</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">96</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #B4C6E7; border-radius: 4px; padding: 2px 6px; display: inline-block; margin-top: 2px;">98</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">98</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -124,41 +134,42 @@ if page == "Live Game":
         # --- BOTTOM ROW: LIVE SITUATION (3 Columns) ---
         bot_col1, bot_col2, bot_col3 = st.columns([1.2, 0.8, 1.2])
 
-        # LEFT: SCOREBUG (Responsive Flexbox Redesign)
+        # LEFT: SCOREBUG (With Pitch Count Hook)
         with bot_col1:
             st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Game Situation</div>', unsafe_allow_html=True)
             components.html("""
-            <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E5EA; height: 100%; min-height: 90px; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
-                
-                <div style="display: flex; gap: 20px; align-items: center;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 16px; font-weight: 800; color: #1C1C1E;">ATL</div>
-                        <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">2</div>
+            <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+                <div style="background: white; border-radius: 16px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E5EA; height: 90px; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
+                    <div style="display: flex; gap: 20px; align-items: center;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 16px; font-weight: 800; color: #1C1C1E;">ATL</div>
+                            <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">2</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 16px; font-weight: 800; color: #A71930;">AZ</div>
+                            <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">0</div>
+                        </div>
                     </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 16px; font-weight: 800; color: #A71930;">AZ</div>
-                        <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">0</div>
+                    <div style="font-size: 20px; font-weight: 800; color: #1C1C1E; border-left: 1px solid #E5E5EA; border-right: 1px solid #E5E5EA; padding: 0 25px;">
+                        ▲ 6th
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
+                        <div style="text-align: right;">
+                            <div style="font-size: 18px; font-weight: 800; color: #1C1C1E;">1 - 1</div>
+                            <div style="font-size: 13px; font-weight: 600; color: #8E8E93; margin-top: 2px;">1 Out</div>
+                        </div>
+                        <div style="position: relative; width: 36px; height: 36px;">
+                            <div style="position: absolute; top: 4px; left: 13px; width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
+                            <div style="position: absolute; top: 16px; left: 0px; width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
+                            <div style="position: absolute; top: 16px; left: 26px; width: 10px; height: 10px; transform: rotate(45deg); background-color: #13274F; border: 2px solid #13274F;"></div>
+                        </div>
                     </div>
                 </div>
-
-                <div style="font-size: 20px; font-weight: 800; color: #1C1C1E; border-left: 1px solid #E5E5EA; border-right: 1px solid #E5E5EA; padding: 0 25px;">
-                    ▲ 6th
+                <div style="text-align: right; margin-top: 8px; font-size: 13px; font-weight: 700; color: #8E8E93; padding-right: 5px;">
+                    <span style="color: #A71930;">Rodriguez</span> P: 72
                 </div>
-
-                <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
-                    <div style="text-align: right;">
-                        <div style="font-size: 18px; font-weight: 800; color: #1C1C1E;">1 - 1</div>
-                        <div style="font-size: 13px; font-weight: 600; color: #8E8E93; margin-top: 2px;">1 Out</div>
-                    </div>
-                    <div style="position: relative; width: 36px; height: 36px;">
-                        <div style="position: absolute; top: 4px; left: 13px; width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
-                        <div style="position: absolute; top: 16px; left: 0px; width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
-                        <div style="position: absolute; top: 16px; left: 26px; width: 10px; height: 10px; transform: rotate(45deg); background-color: #13274F; border: 2px solid #13274F;"></div>
-                    </div>
-                </div>
-
             </div>
-            """, height=125)
+            """, height=135)
 
         # CENTER: 2D STRIKE ZONE
         with bot_col2:
