@@ -13,28 +13,14 @@ st.markdown("""
     .stApp { background-color: #F2F2F7; color: #1C1C1E; }
     
     div[data-testid="stDataFrame"] > div {
-        background-color: #FFFFFF;
-        border-radius: 0 0 12px 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-        border: none;
+        background-color: #FFFFFF; border-radius: 0 0 12px 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); border: none;
     }
     
     div[data-baseweb="tab-list"] { background-color: #E5E5EA; border-radius: 10px; padding: 4px; gap: 4px; }
-    button[data-baseweb="tab"] {
-        background-color: transparent !important;
-        border-radius: 8px !important;
-        color: #1C1C1E !important;
-        font-weight: 600 !important;
-        padding: 8px 16px !important;
-        border: none !important;
-    }
-    button[data-baseweb="tab"][aria-selected="true"] {
-        background-color: #FFFFFF !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-    }
+    button[data-baseweb="tab"] { background-color: transparent !important; border-radius: 8px !important; color: #1C1C1E !important; font-weight: 600 !important; padding: 8px 16px !important; border: none !important; }
+    button[data-baseweb="tab"][aria-selected="true"] { background-color: #FFFFFF !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; }
 
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;} footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -42,7 +28,7 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v5.1 - Polished Scorebug & Colors")
+    st.caption("UI Prototype v6.0 - Custom Grids & Polish")
 
 # 4. MAIN ROUTING LOGIC
 if page == "Live Game":
@@ -55,44 +41,82 @@ if page == "Live Game":
     with tab1:
         st.write("") 
         
-        # --- TOP ROW: MATCHUP (2 Columns) ---
+        # --- TOP ROW: MATCHUP (Custom HTML Grids instead of DataFrames) ---
         top_col1, top_col2 = st.columns(2)
         
         with top_col1:
-            st.markdown('<div style="background-color: #13274F; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">AT THE PLATE</div>', unsafe_allow_html=True)
-            # Season Context Text
-            st.markdown('<div style="background-color: white; color: #8E8E93; font-size: 13px; font-weight: 700; padding: 8px 15px 0px 15px;">2026 Season: .284 AVG • .820 OPS • 14.5% Whiff%</div>', unsafe_allow_html=True)
-            
-            batter_data = pd.DataFrame({
-                "Batter": ["Drake Baldwin"], "AB": [2], "H": [0], 
-                "Avg EV": [105.0], "Hard Hits": [1], "Whiff %": [0.0]
-            })
-            
-            # Format Batter Table (Blue for High Whiff% for batter)
-            styled_batter = batter_data.style.background_gradient(
-                subset=['Whiff %'], cmap='coolwarm', vmin=15, vmax=35
-            ).format({"Whiff %": "{:.1f}%", "Avg EV": "{:.1f}"})
-            
-            st.dataframe(styled_batter, hide_index=True, use_container_width=True)
+            st.markdown("""
+            <div style="background-color: #13274F; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">AT THE PLATE</div>
+            <div style="background-color: white; border-radius: 0 0 12px 12px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr 1.2fr 1fr; text-align: center; align-items: center;">
+                <div style="text-align: left;">
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">BATTER</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">Drake Baldwin</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">Season</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">AB</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">2</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">214</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">H</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">0</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">61</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">AVG EV</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">105.0</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">91.2</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">HARD HITS</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">1</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">42.1%</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">WHIFFS</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">0</div>
+                    <div style="font-size: 13px; font-weight: 800; color: white; background-color: #D22D49; border-radius: 4px; padding: 2px 6px; display: inline-block; margin-top: 2px;">14.5%</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
             
         with top_col2:
-            st.markdown('<div style="background-color: #A71930; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">ON THE MOUND</div>', unsafe_allow_html=True)
-            # Season Context Text
-            st.markdown('<div style="background-color: white; color: #8E8E93; font-size: 13px; font-weight: 700; padding: 8px 15px 0px 15px;">2026 Season: 3.42 ERA • 1.12 WHIP • 28.5% Whiff%</div>', unsafe_allow_html=True)
-            
-            pitcher_data = pd.DataFrame({
-                "Pitcher": ["Eduardo Rodriguez"], "IP": ["5.1"], "K": [4], 
-                "Pitches": [72], "Whiff %": [18.5], "Stuff+": [96] 
-            })
-
-            # Format Pitcher Table (Red for High Stuff+ / High Whiff%)
-            styled_pitcher = pitcher_data.style.background_gradient(
-                subset=['Stuff+'], cmap='coolwarm', vmin=70, vmax=130
-            ).background_gradient(
-                subset=['Whiff %'], cmap='coolwarm', vmin=15, vmax=35
-            ).format({"Whiff %": "{:.1f}%", "Stuff+": "{:.0f}"})
-
-            st.dataframe(styled_pitcher, hide_index=True, use_container_width=True)
+            st.markdown("""
+            <div style="background-color: #A71930; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">ON THE MOUND</div>
+            <div style="background-color: white; border-radius: 0 0 12px 12px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr 1fr 1fr; text-align: center; align-items: center;">
+                <div style="text-align: left;">
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">PITCHER</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">Eduardo Rodriguez</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">Season</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">IP</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">5.1</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">114.0</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">K</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">4</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">24.5%</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">PITCHES</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">72</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">15.8</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">WHIFFS</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">6</div>
+                    <div style="font-size: 13px; font-weight: 800; color: white; background-color: #D22D49; border-radius: 4px; padding: 2px 6px; display: inline-block; margin-top: 2px;">28.5%</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">STUFF+</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">96</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #B4C6E7; border-radius: 4px; padding: 2px 6px; display: inline-block; margin-top: 2px;">98</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
         st.write("")
         st.write("")
@@ -100,14 +124,14 @@ if page == "Live Game":
         # --- BOTTOM ROW: LIVE SITUATION (3 Columns) ---
         bot_col1, bot_col2, bot_col3 = st.columns([1.2, 0.8, 1.2])
 
-        # LEFT: SCOREBUG (Redesigned Flexbox)
+        # LEFT: SCOREBUG (Strict CSS Grid Redesign)
         with bot_col1:
             st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Game Situation</div>', unsafe_allow_html=True)
             components.html("""
-            <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E5EA; height: 100%; min-height: 85px;">
+            <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; padding: 15px 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; border: 1px solid #E5E5EA; height: 100%; min-height: 90px; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
                 
-                <div style="display: flex; gap: 20px; align-items: center; flex: 1;">
-                    <div style="display: flex; gap: 15px; align-items: center;">
+                <div style="display: flex; justify-content: flex-start; align-items: center; gap: 20px;">
+                    <div style="display: flex; gap: 15px;">
                         <div style="text-align: center;">
                             <div style="font-size: 18px; font-weight: 800; color: #1C1C1E;">ATL</div>
                             <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">2</div>
@@ -117,10 +141,10 @@ if page == "Live Game":
                             <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">0</div>
                         </div>
                     </div>
-                    <div style="font-size: 22px; font-weight: 800; color: #1C1C1E; margin-left: 10px;">▲ 6th</div>
+                    <div style="font-size: 22px; font-weight: 800; color: #1C1C1E; margin-left: 5px;">▲ 6th</div>
                 </div>
 
-                <div style="display: flex; gap: 15px; align-items: center; justify-content: center; flex: 1; border-left: 1px solid #E5E5EA; border-right: 1px solid #E5E5EA; padding: 0 15px;">
+                <div style="display: flex; justify-content: center; align-items: center; gap: 15px; border-left: 1px solid #E5E5EA; border-right: 1px solid #E5E5EA; height: 50px;">
                     <div style="text-align: right;">
                         <div style="font-size: 20px; font-weight: 800; color: #1C1C1E;">1 - 1</div>
                         <div style="font-size: 14px; font-weight: 600; color: #8E8E93; margin-top: 2px;">1 Out</div>
@@ -132,13 +156,12 @@ if page == "Live Game":
                     </div>
                 </div>
 
-                <div style="text-align: right; flex: 1;">
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; text-transform: uppercase; letter-spacing: 0.5px;">Win Prob</div>
-                    <div style="font-size: 24px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">ATL 74.2%</div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E; text-transform: uppercase; letter-spacing: 0.5px;">Win Probability</div>
+                    <div style="font-size: 22px; font-weight: 500; color: #8E8E93; margin-top: 2px;">ATL 74.2%</div>
                 </div>
-
             </div>
-            """, height=120)
+            """, height=125)
 
         # CENTER: 2D STRIKE ZONE (Solid Lines)
         with bot_col2:
@@ -151,15 +174,12 @@ if page == "Live Game":
             ax.set_xlim(-2, 2)
             ax.set_ylim(0, 5)
 
-            # Draw Home Plate
             plate = patches.Polygon([(-0.71, 0.1), (0.71, 0.1), (0.71, 0.3), (0, 0.5), (-0.71, 0.3)], closed=True, facecolor='#E5E5EA', edgecolor='#C7C7CC')
             ax.add_patch(plate)
 
-            # Draw Strike Zone (Solid Line via linestyle='-')
             zone = patches.Rectangle((-0.71, 1.5), 1.42, 2.0, linewidth=2, edgecolor='#8E8E93', facecolor='none', linestyle='-')
             ax.add_patch(zone)
 
-            # Plot Pitches
             ax.scatter(0.3, 0.8, color='#FF8200', s=200, zorder=5, edgecolor='white', linewidth=1.5)
             ax.text(0.3, 0.8, '1', color='white', fontsize=9, ha='center', va='center', weight='bold', zorder=6)
             
@@ -172,7 +192,7 @@ if page == "Live Game":
             ax.axis('off')
             st.pyplot(fig, transparent=True)
 
-        # RIGHT: PITCH SEQUENCE (Gradient Colors & Decimal Velo)
+        # RIGHT: PITCH SEQUENCE 
         with bot_col3:
             st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Sequence</div>', unsafe_allow_html=True)
             
@@ -192,7 +212,6 @@ if page == "Live Game":
                 color = colors.get(val, '#1C1C1E')
                 return f'color: {color}; font-weight: 700;'
 
-            # Map the text colors, then apply the Savant red/blue gradient to Stuff+, then format decimals
             styled_seq = pitch_seq.style.map(color_pitches, subset=['Pitch']) \
                 .background_gradient(subset=['Stuff+'], cmap='coolwarm', vmin=70, vmax=130) \
                 .format({"Vel": "{:.1f}", "Stuff+": "{:.0f}"})
