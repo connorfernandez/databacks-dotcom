@@ -3,6 +3,8 @@ import pandas as pd
 import streamlit.components.v1 as components
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 import datetime
 import requests
 
@@ -26,7 +28,7 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v18.0 - Universal Gradients")
+    st.caption("UI Prototype v19.0 - Continuous Gradients")
 
 # --- TEAM COLOR DICTIONARY ---
 TEAM_COLORS = {
@@ -64,42 +66,55 @@ def calc_xwoba(season_stats):
     return woba
 
 def get_color_pill(val, metric_type, font_size="12px"):
-    """Generates the universal Savant Red/Blue gradient CSS pill."""
+    """Generates a dynamic Savant Red/Blue gradient CSS pill using a continuous colormap."""
     if val in ['--', '-', None, ''] or pd.isna(val):
         return f'<span style="font-size: {font_size}; font-family: -apple-system, sans-serif; font-weight: 800; color: #8E8E93; background-color: #E5E5EA; padding: 2px 6px; border-radius: 4px;">--</span>'
     
-    color, bg = "#1C1C1E", "#E5E5EA" # Default Gray
     try:
         v = float(val)
-        # Thresholds: (Red Boundary, Blue Boundary, Higher_Is_Red)
-        thresholds = {
-            'xwoba': (0.380, 0.300, True),
-            'stuff': (105, 95, True), # SD of 5
-            'ev': (95.0, 85.0, True),
-            'k_pct_b': (15.0, 25.0, False), # Low K% is RED for batter
-            'k_pct_p': (25.0, 15.0, True),  # High K% is RED for pitcher
-            'bb_pct_b': (10.0, 5.0, True),
-            'bb_pct_p': (5.0, 10.0, False),
-            'avg': (0.280, 0.220, True)
-        }
         
-        if metric_type in thresholds:
-            t_red, t_blue, higher_is_red = thresholds[metric_type]
-            if higher_is_red:
-                if v >= t_red: color, bg = "white", "#D22D49" # Deep Red
-                elif v <= t_blue: color, bg = "white", "#2A64C5" # Deep Blue
-            else:
-                if v <= t_red: color, bg = "white", "#D22D49" 
-                elif v >= t_blue: color, bg = "white", "#2A64C5"
-        
-        # Formatting Output
+        # Format the output text first based on the metric type
         if metric_type in ['k_pct_b', 'k_pct_p', 'bb_pct_b', 'bb_pct_p']: formatted_val = f"{v:.1f}%"
         elif metric_type in ['xwoba', 'avg']: formatted_val = f".{int(v*1000):03d}"
         elif metric_type in ['ev']: formatted_val = f"{v:.1f}"
         elif metric_type == 'stuff': formatted_val = f"{int(v)}"
         else: formatted_val = str(val)
+
+        # Define bounds: (Min/Blue Boundary, Max/Red Boundary)
+        # If lower is better (like Batter K%), max is lower than min
+        bounds = {
+            'xwoba': (0.260, 0.380),
+            'stuff': (85.0, 115.0), 
+            'ev': (85.0, 95.0),
+            'k_pct_b': (30.0, 10.0),  # Batter K%: 30% is Blue (0.0), 10% is Red (1.0)
+            'k_pct_p': (15.0, 30.0),  # Pitcher K%: 15% is Blue (0.0), 30% is Red (1.0)
+            'bb_pct_b': (4.0, 14.0),
+            'bb_pct_p': (12.0, 4.0),
+            'avg': (0.200, 0.300)
+        }
+        
+        if metric_type in bounds:
+            min_b, max_b = bounds[metric_type]
             
-        return f'<span style="font-size: {font_size}; font-family: -apple-system, sans-serif; font-weight: 800; color: {color}; background-color: {bg}; padding: 2px 6px; border-radius: 4px;">{formatted_val}</span>'
+            # Map value to a 0.0 -> 1.0 spectrum
+            if max_b > min_b: norm = (v - min_b) / (max_b - min_b)
+            else: norm = (min_b - v) / (min_b - max_b)
+                
+            # Clamp the value so it doesn't break the color generator
+            norm = max(0.0, min(1.0, norm))
+            
+            # Generate exact hex code from the coolwarm map
+            cmap = cm.get_cmap('coolwarm')
+            rgba = cmap(norm)
+            bg_hex = mcolors.to_hex(rgba)
+            
+            # Determine text color based on relative luminance (brightness) of the background
+            r, g, b, _ = rgba
+            luminance = 0.299*r + 0.587*g + 0.114*b
+            text_color = "white" if luminance < 0.6 else "#1C1C1E"
+            
+            return f'<span style="font-size: {font_size}; font-family: -apple-system, sans-serif; font-weight: 800; color: {text_color}; background-color: {bg_hex}; padding: 2px 6px; border-radius: 4px;">{formatted_val}</span>'
+            
     except Exception:
         return f'<span style="font-size: {font_size}; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; padding: 2px 6px; border-radius: 4px;">{val}</span>'
 
