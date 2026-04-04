@@ -28,7 +28,7 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v7.0 - Realistic Gradients")
+    st.caption("UI Prototype v8.0 - Pitch Usage & BB%")
 
 # 4. MAIN ROUTING LOGIC
 if page == "Live Game":
@@ -66,7 +66,7 @@ if page == "Live Game":
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">BB</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">1</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">24</div>
+                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 4px; display: inline-block; margin-top: 2px;">11.2%</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">K</div>
@@ -134,7 +134,7 @@ if page == "Live Game":
         # --- BOTTOM ROW: LIVE SITUATION (3 Columns) ---
         bot_col1, bot_col2, bot_col3 = st.columns([1.2, 0.8, 1.2])
 
-        # LEFT: SCOREBUG (With Pitch Count Hook)
+        # LEFT: SCOREBUG
         with bot_col1:
             st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Game Situation</div>', unsafe_allow_html=True)
             components.html("""
@@ -178,7 +178,6 @@ if page == "Live Game":
             fig, ax = plt.subplots(figsize=(3, 3))
             fig.patch.set_facecolor('#F2F2F7') 
             ax.set_facecolor('#F2F2F7')
-            
             ax.set_xlim(-2, 2)
             ax.set_ylim(0, 5)
 
@@ -200,13 +199,45 @@ if page == "Live Game":
             ax.axis('off')
             st.pyplot(fig, transparent=True)
 
-        # RIGHT: PITCH SEQUENCE 
+        # RIGHT: PITCH USAGE & SEQUENCE 
         with bot_col3:
+            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Usage</div>', unsafe_allow_html=True)
+            
+            # Custom HTML Grid for Pitch Usage
+            st.markdown("""
+            <div style="background-color: white; border-radius: 12px; padding: 12px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; justify-content: space-between; text-align: center; border: 1px solid #E5E5EA; margin-bottom: 20px;">
+                <div style="text-align: left; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E;">Game</div>
+                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 4px;">Season</div>
+                </div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 800; color: #FF8200;">SI</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">44%</div>
+                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">41%</div>
+                </div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 800; color: #933F2C;">FC</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">26%</div>
+                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">22%</div>
+                </div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 800; color: #00D1ED;">CU</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">18%</div>
+                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">15%</div>
+                </div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 800; color: #D22D49;">FF</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">12%</div>
+                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">22%</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
             st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Sequence</div>', unsafe_allow_html=True)
             
             pitch_seq = pd.DataFrame({
                 "#": [1, 2, 3],
-                "Pitch": ["Sinker", "Curveball", "Cutter"],
+                "Pitch": ["SI", "CU", "FC"],
                 "Result": ["Ball In Dirt", "Called Strike", "In play, out(s)"],
                 "Vel": [86.9, 78.3, 86.6],
                 "Spin": [2206, 2225, 2203],
@@ -216,9 +247,9 @@ if page == "Live Game":
             })
 
             def color_pitches(val):
-                colors = {'Sinker': '#FF8200', 'Curveball': '#00D1ED', 'Cutter': '#933F2C'}
+                colors = {'SI': '#FF8200', 'CU': '#00D1ED', 'FC': '#933F2C', 'FF': '#D22D49', 'CH': '#1DBE3A', 'SL': '#E3E1A6'}
                 color = colors.get(val, '#1C1C1E')
-                return f'color: {color}; font-weight: 700;'
+                return f'color: {color}; font-weight: 800;'
 
             styled_seq = pitch_seq.style.map(color_pitches, subset=['Pitch']) \
                 .background_gradient(subset=['Stuff+'], cmap='coolwarm', vmin=70, vmax=130) \
