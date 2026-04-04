@@ -28,7 +28,7 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v6.0 - Custom Grids & Polish")
+    st.caption("UI Prototype v6.1 - Responsive Scorebug")
 
 # 4. MAIN ROUTING LOGIC
 if page == "Live Game":
@@ -41,7 +41,7 @@ if page == "Live Game":
     with tab1:
         st.write("") 
         
-        # --- TOP ROW: MATCHUP (Custom HTML Grids instead of DataFrames) ---
+        # --- TOP ROW: MATCHUP (Custom HTML Grids) ---
         top_col1, top_col2 = st.columns(2)
         
         with top_col1:
@@ -124,46 +124,43 @@ if page == "Live Game":
         # --- BOTTOM ROW: LIVE SITUATION (3 Columns) ---
         bot_col1, bot_col2, bot_col3 = st.columns([1.2, 0.8, 1.2])
 
-        # LEFT: SCOREBUG (Strict CSS Grid Redesign)
+        # LEFT: SCOREBUG (Responsive Flexbox Redesign)
         with bot_col1:
             st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Game Situation</div>', unsafe_allow_html=True)
             components.html("""
-            <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; padding: 15px 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; border: 1px solid #E5E5EA; height: 100%; min-height: 90px; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
+            <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E5EA; height: 100%; min-height: 90px; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
                 
-                <div style="display: flex; justify-content: flex-start; align-items: center; gap: 20px;">
-                    <div style="display: flex; gap: 15px;">
-                        <div style="text-align: center;">
-                            <div style="font-size: 18px; font-weight: 800; color: #1C1C1E;">ATL</div>
-                            <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">2</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 18px; font-weight: 800; color: #A71930;">AZ</div>
-                            <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">0</div>
-                        </div>
+                <div style="display: flex; gap: 20px; align-items: center;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 16px; font-weight: 800; color: #1C1C1E;">ATL</div>
+                        <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">2</div>
                     </div>
-                    <div style="font-size: 22px; font-weight: 800; color: #1C1C1E; margin-left: 5px;">▲ 6th</div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 16px; font-weight: 800; color: #A71930;">AZ</div>
+                        <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">0</div>
+                    </div>
                 </div>
 
-                <div style="display: flex; justify-content: center; align-items: center; gap: 15px; border-left: 1px solid #E5E5EA; border-right: 1px solid #E5E5EA; height: 50px;">
+                <div style="font-size: 20px; font-weight: 800; color: #1C1C1E; border-left: 1px solid #E5E5EA; border-right: 1px solid #E5E5EA; padding: 0 25px;">
+                    ▲ 6th
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
                     <div style="text-align: right;">
-                        <div style="font-size: 20px; font-weight: 800; color: #1C1C1E;">1 - 1</div>
-                        <div style="font-size: 14px; font-weight: 600; color: #8E8E93; margin-top: 2px;">1 Out</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #1C1C1E;">1 - 1</div>
+                        <div style="font-size: 13px; font-weight: 600; color: #8E8E93; margin-top: 2px;">1 Out</div>
                     </div>
-                    <div style="position: relative; width: 40px; height: 40px; margin-left: 5px;">
-                        <div style="position: absolute; top: 4px; left: 14px; width: 12px; height: 12px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
-                        <div style="position: absolute; top: 18px; left: 0px; width: 12px; height: 12px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
-                        <div style="position: absolute; top: 18px; left: 28px; width: 12px; height: 12px; transform: rotate(45deg); background-color: #13274F; border: 2px solid #13274F;"></div>
+                    <div style="position: relative; width: 36px; height: 36px;">
+                        <div style="position: absolute; top: 4px; left: 13px; width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
+                        <div style="position: absolute; top: 16px; left: 0px; width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
+                        <div style="position: absolute; top: 16px; left: 26px; width: 10px; height: 10px; transform: rotate(45deg); background-color: #13274F; border: 2px solid #13274F;"></div>
                     </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
-                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E; text-transform: uppercase; letter-spacing: 0.5px;">Win Probability</div>
-                    <div style="font-size: 22px; font-weight: 500; color: #8E8E93; margin-top: 2px;">ATL 74.2%</div>
-                </div>
             </div>
             """, height=125)
 
-        # CENTER: 2D STRIKE ZONE (Solid Lines)
+        # CENTER: 2D STRIKE ZONE
         with bot_col2:
             st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px; text-align: center;">Pitch Location</div>', unsafe_allow_html=True)
             
