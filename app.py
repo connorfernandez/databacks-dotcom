@@ -33,36 +33,62 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v13.0 - API Engine & Timeline")
+    st.caption("UI Prototype v13.1 - Dynamic API Header")
 
-# 4. MLB STATS-API ENGINE SKELETON
-@st.cache_data(ttl=30) # Caches data for 30 seconds so we don't spam the MLB servers
-def fetch_mlb_data(selected_date):
-    # TODO: We will replace this dummy data block with the real requests.get('https://statsapi.mlb.com/api/v1.1/game/...')
-    # For now, it securely holds our pristine broadcast layout data.
-    return True
+# 4. MLB STATS-API ENGINE
+@st.cache_data(ttl=30) 
+def fetch_mlb_schedule(selected_date):
+    """Fetches the real MLB schedule for the selected date."""
+    # Format the date perfectly for the MLB URL (e.g., 2026-04-03)
+    date_str = selected_date.strftime("%Y-%m-%d")
+    url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={date_str}"
+    
+    try:
+        response = requests.get(url).json()
+        
+        if response['totalGames'] > 0:
+            games = response['dates'][0]['games']
+            
+            # 1. Try to find a Diamondbacks game first
+            for game in games:
+                away_team = game['teams']['away']['team']['name']
+                home_team = game['teams']['home']['team']['name']
+                if "Diamondbacks" in away_team or "Diamondbacks" in home_team:
+                    return f"{away_team} @ {home_team}"
+            
+            # 2. If the Dbacks have an off-day, just show the first game of the day
+            away_team = games[0]['teams']['away']['team']['name']
+            home_team = games[0]['teams']['home']['team']['name']
+            return f"{away_team} @ {home_team}"
+        else:
+            return "No Games Scheduled"
+            
+    except Exception as e:
+        return "Error Loading API"
 
 # 5. MAIN ROUTING LOGIC
 if page == "Live Game":
     
-    # --- DYNAMIC HEADER & DATE PICKER ---
+    # Date Picker locked between Opening Day 2026 and Today
     header_col1, header_col2 = st.columns([4, 1])
-    with header_col1:
-        st.markdown("<h2 style='color: #1C1C1E; font-weight: 400; margin-bottom: 0px;'>Braves vs. Dbacks</h2>", unsafe_allow_html=True)
     with header_col2:
-        # Date Picker locked between Opening Day 2026 and Today
         selected_date = st.date_input(
             "Game Date", 
             value=datetime.date(2026, 4, 3), 
             min_value=datetime.date(2026, 3, 26),
             max_value=datetime.date.today(),
-            label_visibility="collapsed" # Hides the label for the clean Apple UI look
+            label_visibility="collapsed"
         )
         
-    st.write("") 
+    # Ask the API what game happened on this date
+    live_header_text = fetch_mlb_schedule(selected_date)
     
-    # Call the API Engine (Currently doing nothing but ready for action)
-    game_data = fetch_mlb_data(selected_date)
+    # Inject the real API data into the HTML header
+    with header_col1:
+        st.markdown(f"<h2 style='color: #1C1C1E; font-weight: 400; margin-bottom: 0px;'>{live_header_text}</h2>", unsafe_allow_html=True)
+
+        
+    st.write("") 
     
     tab1, tab2, tab3 = st.tabs(["Live AB", "Scoreboard", "Box Score"])
     
