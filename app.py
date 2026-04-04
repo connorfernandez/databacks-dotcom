@@ -26,7 +26,7 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v14.0 - Live AB Picker")
+    st.caption("UI Prototype v14.2 - 2026 Timeline Lock")
 
 # 4. MLB STATS-API ENGINE
 @st.cache_data(ttl=60) 
@@ -77,7 +77,8 @@ if page == "Live Game":
     with header_col2:
         selected_date = st.date_input(
             "Game Date", 
-            value=datetime.date(2024, 9, 29), # Defaulting to a known past game for testing
+            value=datetime.date(2026, 4, 3), # Locked strictly to the 2026 Season
+            min_value=datetime.date(2026, 3, 26), # Opening Day 2026
             max_value=datetime.date.today(),
             label_visibility="collapsed"
         )
@@ -110,7 +111,7 @@ if page == "Live Game":
         home_abbr = live_header_text.split(" @ ")[1][:3].upper()
         
     else:
-        st.warning("No play-by-play data available for this game yet.")
+        st.warning("No play-by-play data available for this game.")
         batter_name, pitcher_name, inning, outs, away_score, home_score, away_abbr, home_abbr = "N/A", "N/A", "-", 0, 0, 0, "AWY", "HME"
 
     st.write("") 
