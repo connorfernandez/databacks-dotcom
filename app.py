@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 # 1. PAGE SETUP
 st.set_page_config(page_title="Databacks", page_icon="🐍", layout="wide", initial_sidebar_state="expanded")
@@ -40,12 +42,12 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v4.1 - Scorebug Fix")
+    st.caption("UI Prototype v5.0 - 3-Column Layout")
 
 # 4. MAIN ROUTING LOGIC
 if page == "Live Game":
     
-    # Savant-style Header
+    # Header
     st.markdown("<h2 style='color: #1C1C1E; font-weight: 400; margin-bottom: 0px;'>Braves vs. Dbacks - 4/3/2026</h2>", unsafe_allow_html=True)
     st.write("") 
     
@@ -53,10 +55,11 @@ if page == "Live Game":
     
     with tab1:
         st.write("") 
-        col1, col2 = st.columns(2)
         
-        with col1:
-            # Braves Navy Header for Batter (ATL is hitting)
+        # --- TOP ROW: MATCHUP (2 Columns) ---
+        top_col1, top_col2 = st.columns(2)
+        
+        with top_col1:
             st.markdown('<div style="background-color: #13274F; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">AT THE PLATE</div>', unsafe_allow_html=True)
             batter_data = pd.DataFrame({
                 "Batter": ["Drake Baldwin"], "AB": [2], "H": [0], 
@@ -64,55 +67,96 @@ if page == "Live Game":
             })
             st.dataframe(batter_data, hide_index=True, use_container_width=True)
             
-            # FOX-STYLE SCOREBUG (Using components.html to prevent glitches)
-            components.html("""
-            <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E5EA;">
-                
-                <div style="display: flex; gap: 20px; align-items: center;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 20px; font-weight: 800; color: #1C1C1E;">ATL</div>
-                        <div style="font-size: 24px; font-weight: 600; color: #8E8E93;">2</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 20px; font-weight: 800; color: #A71930;">AZ</div>
-                        <div style="font-size: 24px; font-weight: 600; color: #8E8E93;">0</div>
-                    </div>
-                </div>
-
-                <div style="text-align: center; border-left: 1px solid #E5E5EA; border-right: 1px solid #E5E5EA; padding: 0 20px;">
-                    <div style="font-size: 16px; font-weight: 700; color: #1C1C1E;">▲ 6th</div>
-                    <div style="font-size: 12px; font-weight: 600; color: #8E8E93; margin-top: 4px;">ATL 74.2% WP</div>
-                </div>
-
-                <div style="display: flex; gap: 15px; align-items: center;">
-                    <div style="text-align: right;">
-                        <div style="font-size: 18px; font-weight: 700; color: #1C1C1E;">1 - 1</div>
-                        <div style="font-size: 14px; font-weight: 600; color: #8E8E93; margin-top: 2px;">1 Out</div>
-                    </div>
-                    
-                    <div style="position: relative; width: 42px; height: 42px; margin-left: 10px;">
-                        <div style="position: absolute; top: 4px; left: 15px; width: 12px; height: 12px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
-                        <div style="position: absolute; top: 19px; left: 0px; width: 12px; height: 12px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
-                        <div style="position: absolute; top: 19px; left: 30px; width: 12px; height: 12px; transform: rotate(45deg); background-color: #13274F; border: 2px solid #13274F;"></div>
-                    </div>
-                </div>
-
-            </div>
-            """, height=110)
-
-        with col2:
-            # Sedona Red Header for Pitcher (Dbacks are pitching)
+        with top_col2:
             st.markdown('<div style="background-color: #A71930; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">ON THE MOUND</div>', unsafe_allow_html=True)
             pitcher_data = pd.DataFrame({
                 "Pitcher": ["Eduardo Rodriguez"], "IP": ["5.1"], "K": [4], 
                 "Pitches": [72], "Whiffs": [6], "Whiff %": ["18.5%"], "Stuff+": [96] 
             })
             st.dataframe(pitcher_data, hide_index=True, use_container_width=True)
+
+        st.write("")
+        st.write("")
+
+        # --- BOTTOM ROW: LIVE SITUATION (3 Columns) ---
+        # We give the outer columns slightly more width (1.2) than the middle (0.8) to fit the tables and scorebug better.
+        bot_col1, bot_col2, bot_col3 = st.columns([1.2, 0.8, 1.2])
+
+        # LEFT: SCOREBUG
+        with bot_col1:
+            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Game Situation</div>', unsafe_allow_html=True)
+            components.html("""
+            <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E5EA;">
+                
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 18px; font-weight: 800; color: #1C1C1E;">ATL</div>
+                        <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">2</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 18px; font-weight: 800; color: #A71930;">AZ</div>
+                        <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">0</div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; border-left: 1px solid #E5E5EA; border-right: 1px solid #E5E5EA; padding: 0 10px;">
+                    <div style="font-size: 14px; font-weight: 700; color: #1C1C1E;">▲ 6th</div>
+                    <div style="font-size: 11px; font-weight: 600; color: #8E8E93; margin-top: 4px;">ATL 74.2%</div>
+                </div>
+
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="text-align: right;">
+                        <div style="font-size: 16px; font-weight: 700; color: #1C1C1E;">1 - 1</div>
+                        <div style="font-size: 12px; font-weight: 600; color: #8E8E93; margin-top: 2px;">1 Out</div>
+                    </div>
+                    
+                    <div style="position: relative; width: 36px; height: 36px; margin-left: 5px;">
+                        <div style="position: absolute; top: 4px; left: 13px; width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
+                        <div style="position: absolute; top: 16px; left: 0px; width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
+                        <div style="position: absolute; top: 16px; left: 26px; width: 10px; height: 10px; transform: rotate(45deg); background-color: #13274F; border: 2px solid #13274F;"></div>
+                    </div>
+                </div>
+
+            </div>
+            """, height=100)
+
+        # CENTER: 2D STRIKE ZONE
+        with bot_col2:
+            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px; text-align: center;">Pitch Location</div>', unsafe_allow_html=True)
             
-            st.write("")
-            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px; margin-top: 10px;">Pitch Sequence</div>', unsafe_allow_html=True)
+            # Create a clean, borderless figure matching the app background
+            fig, ax = plt.subplots(figsize=(3, 3))
+            fig.patch.set_facecolor('#F2F2F7') 
+            ax.set_facecolor('#F2F2F7')
             
-            # PA #37 Pitch Data
+            ax.set_xlim(-2, 2)
+            ax.set_ylim(0, 5)
+
+            # Draw Home Plate
+            plate = patches.Polygon([(-0.71, 0.1), (0.71, 0.1), (0.71, 0.3), (0, 0.5), (-0.71, 0.3)], closed=True, facecolor='#E5E5EA', edgecolor='#C7C7CC')
+            ax.add_patch(plate)
+
+            # Draw Strike Zone
+            zone = patches.Rectangle((-0.71, 1.5), 1.42, 2.0, linewidth=2, edgecolor='#8E8E93', facecolor='none', linestyle='--')
+            ax.add_patch(zone)
+
+            # Plot Pitches
+            ax.scatter(0.3, 0.8, color='#FF8200', s=200, zorder=5, edgecolor='white', linewidth=1.5)
+            ax.text(0.3, 0.8, '1', color='white', fontsize=9, ha='center', va='center', weight='bold', zorder=6)
+            
+            ax.scatter(-0.5, 1.8, color='#00D1ED', s=200, zorder=5, edgecolor='white', linewidth=1.5)
+            ax.text(-0.5, 1.8, '2', color='white', fontsize=9, ha='center', va='center', weight='bold', zorder=6)
+
+            ax.scatter(0.1, 2.6, color='#933F2C', s=200, zorder=5, edgecolor='white', linewidth=1.5)
+            ax.text(0.1, 2.6, '3', color='white', fontsize=9, ha='center', va='center', weight='bold', zorder=6)
+
+            ax.axis('off')
+            st.pyplot(fig, transparent=True)
+
+        # RIGHT: PITCH SEQUENCE
+        with bot_col3:
+            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Sequence</div>', unsafe_allow_html=True)
+            
             pitch_seq = pd.DataFrame({
                 "#": [1, 2, 3],
                 "Pitch": ["Sinker", "Curveball", "Cutter"],
@@ -124,7 +168,6 @@ if page == "Live Game":
                 "Stuff+": [92, 108, 98]
             })
 
-            # Color styling function for pitches
             def color_pitches(val):
                 colors = {'Sinker': '#FF8200', 'Curveball': '#00D1ED', 'Cutter': '#933F2C'}
                 color = colors.get(val, '#1C1C1E')
