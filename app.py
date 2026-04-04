@@ -26,18 +26,18 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v14.2 - 2026 Timeline Lock")
+    st.caption("UI Prototype v14.3 - Bulletproof Engine")
 
 # 4. MLB STATS-API ENGINE
 @st.cache_data(ttl=60) 
 def fetch_mlb_game_data(selected_date):
-    """Fetches the Game ID and Play-by-Play data for the selected date."""
+    """Fetches the Game ID and Play-by-Play data safely."""
     date_str = selected_date.strftime("%Y-%m-%d")
     schedule_url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={date_str}"
     
     try:
         sched_resp = requests.get(schedule_url).json()
-        if sched_resp['totalGames'] == 0:
+        if sched_resp.get('totalGames', 0) == 0:
             return None, "No Games Scheduled", []
 
         games = sched_resp['dates'][0]['games']
@@ -45,13 +45,17 @@ def fetch_mlb_game_data(selected_date):
         # Default to first game, but look for Dbacks
         target_game = games[0]
         for game in games:
-            if "Diamondbacks" in game['teams']['away']['team']['name'] or "Diamondbacks" in game['teams']['home']['team']['name']:
+            away_name = game.get('teams', {}).get('away', {}).get('team', {}).get('name', '')
+            home_name = game.get('teams', {}).get('home', {}).get('team', {}).get('name', '')
+            if "Diamondbacks" in away_name or "Diamondbacks" in home_name:
                 target_game = game
                 break
                 
-        game_pk = target_game['gamePk']
-        away_team = target_game['teams']['away']['team']['teamName']
-        home_team = target_game['teams']['home']['team']['teamName']
+        game_pk = target_game.get('gamePk')
+        
+        # Safely extract team names to prevent KeyErrors
+        away_team = target_game.get('teams', {}).get('away', {}).get('team', {}).get('name', 'Away')
+        home_team = target_game.get('teams', {}).get('home', {}).get('team', {}).get('name', 'Home')
         matchup_text = f"{away_team} @ {home_team}"
         
         # Fetch Play-by-Play
@@ -59,8 +63,6 @@ def fetch_mlb_game_data(selected_date):
         pbp_resp = requests.get(pbp_url).json()
         
         all_plays = pbp_resp.get('liveData', {}).get('plays', {}).get('allPlays', [])
-        
-        # Filter out empty plays
         valid_plays = [p for p in all_plays if 'matchup' in p and 'result' in p]
         
         return game_pk, matchup_text, valid_plays
@@ -75,10 +77,11 @@ if page == "Live Game":
     header_col1, header_col2 = st.columns([3, 2])
     
     with header_col2:
+        # Set to the 2024 season so you have real data to play with
         selected_date = st.date_input(
             "Game Date", 
-            value=datetime.date(2026, 4, 3), # Locked strictly to the 2026 Season
-            min_value=datetime.date(2026, 3, 26), # Opening Day 2026
+            value=datetime.date(2024, 3, 28), 
+            min_value=datetime.date(2015, 4, 1), 
             max_value=datetime.date.today(),
             label_visibility="collapsed"
         )
@@ -91,7 +94,6 @@ if page == "Live Game":
     # --- AT-BAT PICKER ---
     st.write("")
     if plays:
-        # Create a formatted list for the dropdown
         play_options = {
             f"{p['about']['halfInning'].upper()} {p['about']['inning']} • {p['matchup']['batter']['fullName']} - {p['result']['event']}": p 
             for p in plays if 'event' in p['result']
@@ -100,18 +102,23 @@ if page == "Live Game":
         selected_play_key = st.selectbox("Select At-Bat", options=list(play_options.keys()), index=len(play_options)-1)
         active_play = play_options[selected_play_key]
         
-        # Extract live data from the selected play
+        # Extract live data safely
         batter_name = active_play['matchup']['batter']['fullName']
         pitcher_name = active_play['matchup']['pitcher']['fullName']
         inning = f"{'▲' if active_play['about']['halfInning'] == 'top' else '▼'} {active_play['about']['inning']}"
         outs = active_play['count']['outs']
         away_score = active_play['result']['awayScore']
         home_score = active_play['result']['homeScore']
-        away_abbr = live_header_text.split(" @ ")[0][:3].upper()
-        home_abbr = live_header_text.split(" @ ")[1][:3].upper()
         
+        # Safely format abbreviations
+        if " @ " in live_header_text:
+            away_abbr = live_header_text.split(" @ ")[0].split(" ")[-1][:3].upper()
+            home_abbr = live_header_text.split(" @ ")[1].split(" ")[-1][:3].upper()
+        else:
+            away_abbr, home_abbr = "AWY", "HME"
+            
     else:
-        st.warning("No play-by-play data available for this game.")
+        st.warning("No play-by-play data available for this game yet.")
         batter_name, pitcher_name, inning, outs, away_score, home_score, away_abbr, home_abbr = "N/A", "N/A", "-", 0, 0, 0, "AWY", "HME"
 
     st.write("") 
