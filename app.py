@@ -26,12 +26,12 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v14.3 - Bulletproof Engine")
+    st.caption("UI Prototype v15.0 - Live 2026 Engine")
 
 # 4. MLB STATS-API ENGINE
 @st.cache_data(ttl=60) 
 def fetch_mlb_game_data(selected_date):
-    """Fetches the Game ID and Play-by-Play data safely."""
+    """Fetches the Game ID and Play-by-Play data for the selected date."""
     date_str = selected_date.strftime("%Y-%m-%d")
     schedule_url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={date_str}"
     
@@ -42,7 +42,6 @@ def fetch_mlb_game_data(selected_date):
 
         games = sched_resp['dates'][0]['games']
         
-        # Default to first game, but look for Dbacks
         target_game = games[0]
         for game in games:
             away_name = game.get('teams', {}).get('away', {}).get('team', {}).get('name', '')
@@ -53,12 +52,10 @@ def fetch_mlb_game_data(selected_date):
                 
         game_pk = target_game.get('gamePk')
         
-        # Safely extract team names to prevent KeyErrors
         away_team = target_game.get('teams', {}).get('away', {}).get('team', {}).get('name', 'Away')
         home_team = target_game.get('teams', {}).get('home', {}).get('team', {}).get('name', 'Home')
         matchup_text = f"{away_team} @ {home_team}"
         
-        # Fetch Play-by-Play
         pbp_url = f"https://statsapi.mlb.com/api/v1.1/game/{game_pk}/feed/live"
         pbp_resp = requests.get(pbp_url).json()
         
@@ -73,15 +70,14 @@ def fetch_mlb_game_data(selected_date):
 # 5. MAIN ROUTING LOGIC
 if page == "Live Game":
     
-    # --- DYNAMIC HEADER & CONTROLS ---
     header_col1, header_col2 = st.columns([3, 2])
     
     with header_col2:
-        # Set to the 2024 season so you have real data to play with
+        # Strictly locked to the 2026 season
         selected_date = st.date_input(
             "Game Date", 
-            value=datetime.date(2024, 3, 28), 
-            min_value=datetime.date(2015, 4, 1), 
+            value=datetime.date(2026, 4, 3), 
+            min_value=datetime.date(2026, 3, 26), 
             max_value=datetime.date.today(),
             label_visibility="collapsed"
         )
@@ -91,7 +87,6 @@ if page == "Live Game":
     with header_col1:
         st.markdown(f"<h2 style='color: #1C1C1E; font-weight: 400; margin-bottom: 0px;'>{live_header_text}</h2>", unsafe_allow_html=True)
 
-    # --- AT-BAT PICKER ---
     st.write("")
     if plays:
         play_options = {
@@ -102,7 +97,7 @@ if page == "Live Game":
         selected_play_key = st.selectbox("Select At-Bat", options=list(play_options.keys()), index=len(play_options)-1)
         active_play = play_options[selected_play_key]
         
-        # Extract live data safely
+        # --- PARSE MATCHUP DATA ---
         batter_name = active_play['matchup']['batter']['fullName']
         pitcher_name = active_play['matchup']['pitcher']['fullName']
         inning = f"{'▲' if active_play['about']['halfInning'] == 'top' else '▼'} {active_play['about']['inning']}"
@@ -110,16 +105,75 @@ if page == "Live Game":
         away_score = active_play['result']['awayScore']
         home_score = active_play['result']['homeScore']
         
-        # Safely format abbreviations
         if " @ " in live_header_text:
             away_abbr = live_header_text.split(" @ ")[0].split(" ")[-1][:3].upper()
             home_abbr = live_header_text.split(" @ ")[1].split(" ")[-1][:3].upper()
         else:
             away_abbr, home_abbr = "AWY", "HME"
+
+        # --- PARSE INNING SUMMARY ---
+        current_inning_num = active_play['about']['inning']
+        current_half = active_play['about']['halfInning']
+        current_atBatIndex = active_play['about']['atBatIndex']
+        
+        inning_plays = [p for p in plays if p['about']['inning'] == current_inning_num and p['about']['halfInning'] == current_half and p['about']['atBatIndex'] <= current_atBatIndex]
+        
+        inning_summary_html = ""
+        for i, p in enumerate(inning_plays):
+            b_name = p['matchup']['batter']['fullName'].split(' ')[-1] # Last name
+            result_event = p['result'].get('event', 'In Progress')
+            
+            inning_summary_html += f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <div style="font-size: 13px; font-weight: 800; color: #13274F; flex-grow: 1;">
+                    <span style="color: #8E8E93; font-weight: 700; margin-right: 6px;">{i+1}</span>{b_name} <span style="font-size: 11px; font-weight: 600; color: #1C1C1E; margin-left: 6px;">{result_event}</span>
+                </div>
+                <div style="display: flex; gap: 15px; text-align: right;">
+                    <div style="font-size: 12px; font-weight: 700; color: #1C1C1E; width: 35px;">--</div>
+                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; width: 35px;">--</div>
+                </div>
+            </div>
+            """
+
+        # --- PARSE PITCH SEQUENCE ---
+        pitch_events = [e for e in active_play.get('playEvents', []) if e.get('isPitch')]
+        pitch_sequence_html = ""
+        plot_pitches = []
+        
+        pitch_colors = {'FF': '#D22D49', 'SI': '#FF8200', 'FC': '#933F2C', 'CU': '#00D1ED', 'SL': '#E3E1A6', 'CH': '#1DBE3A', 'FS': '#1DBE3A', 'ST': '#E3E1A6', 'SV': '#E3E1A6'}
+        
+        for i, pitch in enumerate(pitch_events):
+            p_code = pitch.get('details', {}).get('type', {}).get('code', 'UN')
+            p_result = pitch.get('details', {}).get('description', 'Unknown')
+            p_velo = pitch.get('pitchData', {}).get('startSpeed', '-')
+            
+            # Extract coordinates for the 2D plot
+            pX = pitch.get('pitchData', {}).get('coordinates', {}).get('pX')
+            pZ = pitch.get('pitchData', {}).get('coordinates', {}).get('pZ')
+            p_color = pitch_colors.get(p_code, '#1C1C1E')
+            
+            if pX is not None and pZ is not None:
+                plot_pitches.append({'x': pX, 'z': pZ, 'color': p_color, 'num': i+1})
+                
+            pitch_sequence_html += f"""
+            <div style="display: grid; grid-template-columns: 0.5fr 1fr 2fr 1fr 1fr; text-align: center; align-items: center; padding: 6px 0;">
+                <div style="font-size: 13px; font-weight: 700; color: #8E8E93; text-align: left;">{i+1}</div>
+                <div style="font-size: 14px; font-weight: 800; color: {p_color}; text-align: left;">{p_code}</div>
+                <div style="font-size: 13px; font-weight: 600; color: #1C1C1E; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{p_result}</div>
+                <div style="font-size: 13px; font-weight: 700; color: #1C1C1E;">{p_velo}</div>
+                <div><span style="font-size: 12px; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; border-radius: 4px; padding: 2px 6px;">--</span></div>
+            </div>
+            """
+            
+        if not pitch_sequence_html:
+            pitch_sequence_html = "<div style='padding: 10px; color: #8E8E93; font-size: 13px; font-style: italic;'>No pitch data available.</div>"
             
     else:
-        st.warning("No play-by-play data available for this game yet.")
+        st.warning("No play-by-play data available for this game.")
         batter_name, pitcher_name, inning, outs, away_score, home_score, away_abbr, home_abbr = "N/A", "N/A", "-", 0, 0, 0, "AWY", "HME"
+        inning_summary_html = ""
+        pitch_sequence_html = ""
+        plot_pitches = []
 
     st.write("") 
     tab1, tab2, tab3 = st.tabs(["Live AB", "Scoreboard", "Box Score"])
@@ -165,13 +219,15 @@ if page == "Live Game":
                     </div>
                 </div>
 
-                <div style="border-left: 1px solid #E5E5EA; padding: 0 20px; display: flex; flex-direction: column; justify-content: center; min-width: 320px; background-color: #FAFAFA;">
+                <div style="border-left: 1px solid #E5E5EA; padding: 10px 20px; display: flex; flex-direction: column; min-width: 320px; background-color: #FAFAFA; overflow-y: auto;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <div style="font-size: 11px; font-weight: 800; color: #8E8E93; text-transform: uppercase;">Inning Summary</div>
+                        <div style="display: flex; gap: 15px; text-align: right;">
+                            <div style="font-size: 11px; font-weight: 700; color: #8E8E93; width: 35px;">EV</div>
+                            <div style="font-size: 11px; font-weight: 700; color: #8E8E93; width: 35px;">xBA</div>
+                        </div>
                     </div>
-                    <div style="font-size: 13px; font-weight: 600; color: #8E8E93; font-style: italic;">
-                        API Inning sequence compiling...
-                    </div>
+                    {inning_summary_html}
                 </div>
             </div>
             """, height=135)
@@ -183,7 +239,18 @@ if page == "Live Game":
 
             with action_col1:
                 st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Usage</div>', unsafe_allow_html=True)
-                st.info("API Pitch parsing coming next...")
+                # Static placeholder for now, as calculating live usage requires full game parsing
+                st.markdown("""
+                <div style="background-color: white; border-radius: 12px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #E5E5EA;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; text-align: center; border-bottom: 1px solid #E5E5EA; padding-bottom: 8px; margin-bottom: 8px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93; text-align: left;">PITCH</div>
+                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">GAME</div>
+                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">SEASON</div>
+                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">VELO</div>
+                    </div>
+                    <div style="padding: 10px; color: #8E8E93; font-size: 13px; font-style: italic;">Live Usage Feed connecting...</div>
+                </div>
+                """, unsafe_allow_html=True)
 
             with action_col2:
                 st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px; text-align: center;">Pitch Location</div>', unsafe_allow_html=True)
@@ -196,12 +263,29 @@ if page == "Live Game":
                 ax.add_patch(plate)
                 zone = patches.Rectangle((-0.71, 1.5), 1.42, 2.0, linewidth=2, edgecolor='#8E8E93', facecolor='none', linestyle='-')
                 ax.add_patch(zone)
+                
+                # Plot Real Pitches
+                for p in plot_pitches:
+                    ax.scatter(p['x'], p['z'], color=p['color'], s=200, zorder=5, edgecolor='white', linewidth=1.5)
+                    ax.text(p['x'], p['z'], str(p['num']), color='white', fontsize=9, ha='center', va='center', weight='bold', zorder=6)
+                    
                 ax.axis('off')
                 st.pyplot(fig, transparent=True)
 
             with action_col3:
                 st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Sequence</div>', unsafe_allow_html=True)
-                st.info("API Pitch sequence coming next...")
+                st.markdown(f"""
+                <div style="background-color: white; border-radius: 12px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #E5E5EA; height: 100%;">
+                    <div style="display: grid; grid-template-columns: 0.5fr 1fr 2fr 1fr 1fr; text-align: center; border-bottom: 1px solid #E5E5EA; padding-bottom: 8px; margin-bottom: 8px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93; text-align: left;">#</div>
+                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93; text-align: left;">PITCH</div>
+                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93; text-align: left;">RESULT</div>
+                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">VELO</div>
+                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">STUFF+</div>
+                    </div>
+                    {pitch_sequence_html}
+                </div>
+                """, unsafe_allow_html=True)
 
             st.write("")
 
