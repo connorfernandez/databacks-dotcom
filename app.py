@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import streamlit.components.v1 as components
 
 # 1. PAGE SETUP
 st.set_page_config(page_title="Databacks", page_icon="🐍", layout="wide", initial_sidebar_state="expanded")
@@ -39,12 +40,12 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v4.0 - Live AB Mastered")
+    st.caption("UI Prototype v4.1 - Scorebug Fix")
 
 # 4. MAIN ROUTING LOGIC
 if page == "Live Game":
     
-    # Savant-style Header (Un-bolded/Normal Weight)
+    # Savant-style Header
     st.markdown("<h2 style='color: #1C1C1E; font-weight: 400; margin-bottom: 0px;'>Braves vs. Dbacks - 4/3/2026</h2>", unsafe_allow_html=True)
     st.write("") 
     
@@ -63,9 +64,9 @@ if page == "Live Game":
             })
             st.dataframe(batter_data, hide_index=True, use_container_width=True)
             
-            # FOX-STYLE SCOREBUG
-            st.markdown("""
-            <div style="background: white; border-radius: 16px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+            # FOX-STYLE SCOREBUG (Using components.html to prevent glitches)
+            components.html("""
+            <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E5EA;">
                 
                 <div style="display: flex; gap: 20px; align-items: center;">
                     <div style="text-align: center;">
@@ -97,7 +98,7 @@ if page == "Live Game":
                 </div>
 
             </div>
-            """, unsafe_allow_html=True)
+            """, height=110)
 
         with col2:
             # Sedona Red Header for Pitcher (Dbacks are pitching)
@@ -129,17 +130,13 @@ if page == "Live Game":
                 color = colors.get(val, '#1C1C1E')
                 return f'color: {color}; font-weight: 700;'
 
-            # Apply colors to the dataframe
             styled_seq = pitch_seq.style.map(color_pitches, subset=['Pitch'])
 
-            # Render with strict column configs (Making '#' narrow)
             st.dataframe(
                 styled_seq, 
                 hide_index=True, 
                 use_container_width=True,
-                column_config={
-                    "#": st.column_config.NumberColumn(width="small")
-                }
+                column_config={"#": st.column_config.NumberColumn(width="small")}
             )
 
     with tab2:
