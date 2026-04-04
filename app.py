@@ -28,7 +28,7 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v9.1 - Footer Cutoff Fix")
+    st.caption("UI Prototype v10.0 - Broadcast Layout")
 
 # 4. MAIN ROUTING LOGIC
 if page == "Live Game":
@@ -41,10 +41,168 @@ if page == "Live Game":
     with tab1:
         st.write("") 
         
-        # --- TOP ROW: MATCHUP (Custom HTML Grids) ---
-        top_col1, top_col2 = st.columns(2)
+        # --- ROW 1: THE SCOREBUG (Full Width Focal Point) ---
+        st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Game Situation</div>', unsafe_allow_html=True)
+        components.html("""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; border: 1px solid #E5E5EA; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; flex-direction: column; overflow: hidden;">
+            <div style="padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; height: 90px;">
+                <div style="display: flex; gap: 20px; align-items: center;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 16px; font-weight: 800; color: #1C1C1E;">ATL</div>
+                        <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">2</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 16px; font-weight: 800; color: #A71930;">AZ</div>
+                        <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">0</div>
+                    </div>
+                </div>
+                <div style="font-size: 20px; font-weight: 800; color: #1C1C1E; border-left: 1px solid #E5E5EA; border-right: 1px solid #E5E5EA; padding: 0 25px;">
+                    ▲ 6th
+                </div>
+                <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
+                    <div style="text-align: right;">
+                        <div style="font-size: 18px; font-weight: 800; color: #1C1C1E;">1 - 1</div>
+                        <div style="font-size: 13px; font-weight: 600; color: #8E8E93; margin-top: 2px;">1 Out</div>
+                    </div>
+                    <div style="position: relative; width: 36px; height: 36px;">
+                        <div style="position: absolute; top: 4px; left: 13px; width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
+                        <div style="position: absolute; top: 16px; left: 0px; width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
+                        <div style="position: absolute; top: 16px; left: 26px; width: 10px; height: 10px; transform: rotate(45deg); background-color: #13274F; border: 2px solid #13274F;"></div>
+                    </div>
+                </div>
+            </div>
+            <div style="background-color: #F9F9F9; border-top: 1px solid #E5E5EA; padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: #1C1C1E;">
+                <div><span style="color: #8E8E93;">AB:</span> <span style="color: #13274F;">Drake Baldwin</span> <span style="margin-left: 15px; color: #8E8E93;">wRC+:</span> 112</div>
+                <div><span style="color: #8E8E93;">P:</span> <span style="color: #A71930;">Eduardo Rodriguez</span> <span style="margin-left: 15px; color: #8E8E93;">PC:</span> 72</div>
+            </div>
+        </div>
+        """, height=165)
+
+        st.write("")
+
+        # --- ROW 2: THE LIVE AT-BAT (3 Columns) ---
+        action_col1, action_col2, action_col3 = st.columns([1.2, 0.8, 1.2])
+
+        # LEFT: INNING SUMMARY
+        with action_col1:
+            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Inning Summary</div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div style="background-color: white; border-radius: 12px; padding: 12px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #E5E5EA;">
+                <div style="display: grid; grid-template-columns: 0.5fr 2fr 2fr 1fr; border-bottom: 1px solid #E5E5EA; padding-bottom: 8px; margin-bottom: 8px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">#</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">PLAYER</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">RESULT</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93; text-align: right;">xBA</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 0.5fr 2fr 2fr 1fr; padding: 4px 0; align-items: center;">
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93;">1</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #13274F;">Harris II</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #1C1C1E;">Single</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; text-align: right;">.780</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 0.5fr 2fr 2fr 1fr; padding: 4px 0; align-items: center;">
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93;">2</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #13274F;">Riley</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #1C1C1E;">Flyout</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; text-align: right;">.040</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # CENTER: 2D STRIKE ZONE
+        with action_col2:
+            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px; text-align: center;">Pitch Location</div>', unsafe_allow_html=True)
+            fig, ax = plt.subplots(figsize=(3, 3))
+            fig.patch.set_facecolor('#F2F2F7') 
+            ax.set_facecolor('#F2F2F7')
+            ax.set_xlim(-2, 2)
+            ax.set_ylim(0, 5)
+
+            plate = patches.Polygon([(-0.71, 0.1), (0.71, 0.1), (0.71, 0.3), (0, 0.5), (-0.71, 0.3)], closed=True, facecolor='#E5E5EA', edgecolor='#C7C7CC')
+            ax.add_patch(plate)
+
+            zone = patches.Rectangle((-0.71, 1.5), 1.42, 2.0, linewidth=2, edgecolor='#8E8E93', facecolor='none', linestyle='-')
+            ax.add_patch(zone)
+
+            ax.scatter(0.3, 0.8, color='#FF8200', s=200, zorder=5, edgecolor='white', linewidth=1.5)
+            ax.text(0.3, 0.8, '1', color='white', fontsize=9, ha='center', va='center', weight='bold', zorder=6)
+            
+            ax.scatter(-0.5, 1.8, color='#00D1ED', s=200, zorder=5, edgecolor='white', linewidth=1.5)
+            ax.text(-0.5, 1.8, '2', color='white', fontsize=9, ha='center', va='center', weight='bold', zorder=6)
+
+            ax.scatter(0.1, 2.6, color='#933F2C', s=200, zorder=5, edgecolor='white', linewidth=1.5)
+            ax.text(0.1, 2.6, '3', color='white', fontsize=9, ha='center', va='center', weight='bold', zorder=6)
+
+            ax.axis('off')
+            st.pyplot(fig, transparent=True)
+
+        # RIGHT: PITCH USAGE & SEQUENCE
+        with action_col3:
+            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Usage</div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div style="background-color: white; border-radius: 12px; padding: 12px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; justify-content: space-between; text-align: center; border: 1px solid #E5E5EA; margin-bottom: 20px;">
+                <div style="text-align: left; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E;">Game</div>
+                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 4px;">Season</div>
+                </div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 800; color: #FF8200;">SI</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">44%</div>
+                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">41%</div>
+                </div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 800; color: #933F2C;">FC</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">26%</div>
+                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">22%</div>
+                </div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 800; color: #00D1ED;">CU</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">18%</div>
+                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">15%</div>
+                </div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 800; color: #D22D49;">FF</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">12%</div>
+                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">22%</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Sequence</div>', unsafe_allow_html=True)
+            pitch_seq = pd.DataFrame({
+                "#": [1, 2, 3],
+                "Pitch": ["SI", "CU", "FC"],
+                "Result": ["Ball In Dirt", "Called Strike", "In play, out(s)"],
+                "Vel": [86.9, 78.3, 86.6],
+                "Spin": [2206, 2225, 2203],
+                "IVB": [6, -5, 8],
+                "HB": [1, 5, 2],
+                "Stuff+": [92, 108, 98]
+            })
+
+            def color_pitches(val):
+                colors = {'SI': '#FF8200', 'CU': '#00D1ED', 'FC': '#933F2C', 'FF': '#D22D49', 'CH': '#1DBE3A', 'SL': '#E3E1A6'}
+                color = colors.get(val, '#1C1C1E')
+                return f'color: {color}; font-weight: 800;'
+
+            styled_seq = pitch_seq.style.map(color_pitches, subset=['Pitch']) \
+                .background_gradient(subset=['Stuff+'], cmap='coolwarm', vmin=70, vmax=130) \
+                .format({"Vel": "{:.1f}", "Stuff+": "{:.0f}"})
+
+            st.dataframe(
+                styled_seq, 
+                hide_index=True, 
+                use_container_width=True,
+                column_config={"#": st.column_config.NumberColumn(width="small")}
+            )
+
+        st.write("")
+        st.write("")
+
+        # --- ROW 3: THE MATCHUP STATS (2 Columns) ---
+        stat_col1, stat_col2 = st.columns(2)
         
-        with top_col1:
+        with stat_col1:
             st.markdown("""
             <div style="background-color: #13274F; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">AT THE PLATE</div>
             <div style="background-color: white; border-radius: 0 0 12px 12px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: grid; grid-template-columns: 2.2fr 0.8fr 0.8fr 0.8fr 0.8fr 1.2fr 1fr; text-align: center; align-items: center;">
@@ -86,7 +244,7 @@ if page == "Live Game":
             </div>
             """, unsafe_allow_html=True)
             
-        with top_col2:
+        with stat_col2:
             st.markdown("""
             <div style="background-color: #A71930; color: white; padding: 10px 15px; border-radius: 12px 12px 0 0; font-weight: bold; font-size: 16px; letter-spacing: 0.5px;">ON THE MOUND</div>
             <div style="background-color: white; border-radius: 0 0 12px 12px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr 1.2fr 1fr; text-align: center; align-items: center;">
@@ -122,169 +280,6 @@ if page == "Live Game":
                 </div>
             </div>
             """, unsafe_allow_html=True)
-
-        st.write("")
-        st.write("")
-
-        # --- BOTTOM ROW: LIVE SITUATION (3 Columns) ---
-        bot_col1, bot_col2, bot_col3 = st.columns([1.2, 0.8, 1.2])
-
-        # LEFT: SCOREBUG & INNING SUMMARY
-        with bot_col1:
-            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Game Situation</div>', unsafe_allow_html=True)
-            
-            # Integrated Scorebug with Footer (Increased height to 165)
-            components.html("""
-            <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; border-radius: 16px; border: 1px solid #E5E5EA; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; flex-direction: column; overflow: hidden;">
-                <div style="padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; height: 90px;">
-                    <div style="display: flex; gap: 20px; align-items: center;">
-                        <div style="text-align: center;">
-                            <div style="font-size: 16px; font-weight: 800; color: #1C1C1E;">ATL</div>
-                            <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">2</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 16px; font-weight: 800; color: #A71930;">AZ</div>
-                            <div style="font-size: 20px; font-weight: 600; color: #8E8E93;">0</div>
-                        </div>
-                    </div>
-                    <div style="font-size: 20px; font-weight: 800; color: #1C1C1E; border-left: 1px solid #E5E5EA; border-right: 1px solid #E5E5EA; padding: 0 25px;">
-                        ▲ 6th
-                    </div>
-                    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
-                        <div style="text-align: right;">
-                            <div style="font-size: 18px; font-weight: 800; color: #1C1C1E;">1 - 1</div>
-                            <div style="font-size: 13px; font-weight: 600; color: #8E8E93; margin-top: 2px;">1 Out</div>
-                        </div>
-                        <div style="position: relative; width: 36px; height: 36px;">
-                            <div style="position: absolute; top: 4px; left: 13px; width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
-                            <div style="position: absolute; top: 16px; left: 0px; width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid #C7C7CC;"></div>
-                            <div style="position: absolute; top: 16px; left: 26px; width: 10px; height: 10px; transform: rotate(45deg); background-color: #13274F; border: 2px solid #13274F;"></div>
-                        </div>
-                    </div>
-                </div>
-                <div style="background-color: #F9F9F9; border-top: 1px solid #E5E5EA; padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: #1C1C1E;">
-                    <div><span style="color: #8E8E93;">AB:</span> <span style="color: #13274F;">Drake Baldwin</span> <span style="margin-left: 15px; color: #8E8E93;">wRC+:</span> 112</div>
-                    <div><span style="color: #8E8E93;">P:</span> <span style="color: #A71930;">Eduardo Rodriguez</span> <span style="margin-left: 15px; color: #8E8E93;">PC:</span> 72</div>
-                </div>
-            </div>
-            """, height=165)
-
-            # Inning Summary HTML Grid
-            st.write("")
-            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Inning Summary</div>', unsafe_allow_html=True)
-            st.markdown("""
-            <div style="background-color: white; border-radius: 12px; padding: 12px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #E5E5EA;">
-                <div style="display: grid; grid-template-columns: 0.5fr 2fr 2fr 1fr; border-bottom: 1px solid #E5E5EA; padding-bottom: 8px; margin-bottom: 8px;">
-                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">#</div>
-                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">PLAYER</div>
-                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93;">RESULT</div>
-                    <div style="font-size: 11px; font-weight: 700; color: #8E8E93; text-align: right;">xBA</div>
-                </div>
-                <div style="display: grid; grid-template-columns: 0.5fr 2fr 2fr 1fr; padding: 4px 0; align-items: center;">
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93;">1</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #13274F;">Harris II</div>
-                    <div style="font-size: 13px; font-weight: 600; color: #1C1C1E;">Single</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; text-align: right;">.780</div>
-                </div>
-                <div style="display: grid; grid-template-columns: 0.5fr 2fr 2fr 1fr; padding: 4px 0; align-items: center;">
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93;">2</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #13274F;">Riley</div>
-                    <div style="font-size: 13px; font-weight: 600; color: #1C1C1E;">Flyout</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; text-align: right;">.040</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        # CENTER: 2D STRIKE ZONE
-        with bot_col2:
-            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px; text-align: center;">Pitch Location</div>', unsafe_allow_html=True)
-            
-            fig, ax = plt.subplots(figsize=(3, 3))
-            fig.patch.set_facecolor('#F2F2F7') 
-            ax.set_facecolor('#F2F2F7')
-            ax.set_xlim(-2, 2)
-            ax.set_ylim(0, 5)
-
-            plate = patches.Polygon([(-0.71, 0.1), (0.71, 0.1), (0.71, 0.3), (0, 0.5), (-0.71, 0.3)], closed=True, facecolor='#E5E5EA', edgecolor='#C7C7CC')
-            ax.add_patch(plate)
-
-            zone = patches.Rectangle((-0.71, 1.5), 1.42, 2.0, linewidth=2, edgecolor='#8E8E93', facecolor='none', linestyle='-')
-            ax.add_patch(zone)
-
-            ax.scatter(0.3, 0.8, color='#FF8200', s=200, zorder=5, edgecolor='white', linewidth=1.5)
-            ax.text(0.3, 0.8, '1', color='white', fontsize=9, ha='center', va='center', weight='bold', zorder=6)
-            
-            ax.scatter(-0.5, 1.8, color='#00D1ED', s=200, zorder=5, edgecolor='white', linewidth=1.5)
-            ax.text(-0.5, 1.8, '2', color='white', fontsize=9, ha='center', va='center', weight='bold', zorder=6)
-
-            ax.scatter(0.1, 2.6, color='#933F2C', s=200, zorder=5, edgecolor='white', linewidth=1.5)
-            ax.text(0.1, 2.6, '3', color='white', fontsize=9, ha='center', va='center', weight='bold', zorder=6)
-
-            ax.axis('off')
-            st.pyplot(fig, transparent=True)
-
-        # RIGHT: PITCH USAGE & SEQUENCE 
-        with bot_col3:
-            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Usage</div>', unsafe_allow_html=True)
-            
-            # Custom HTML Grid for Pitch Usage
-            st.markdown("""
-            <div style="background-color: white; border-radius: 12px; padding: 12px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; justify-content: space-between; text-align: center; border: 1px solid #E5E5EA; margin-bottom: 20px;">
-                <div style="text-align: left; display: flex; flex-direction: column; justify-content: center;">
-                    <div style="font-size: 13px; font-weight: 800; color: #1C1C1E;">Game</div>
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 4px;">Season</div>
-                </div>
-                <div>
-                    <div style="font-size: 14px; font-weight: 800; color: #FF8200;">SI</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">44%</div>
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">41%</div>
-                </div>
-                <div>
-                    <div style="font-size: 14px; font-weight: 800; color: #933F2C;">FC</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">26%</div>
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">22%</div>
-                </div>
-                <div>
-                    <div style="font-size: 14px; font-weight: 800; color: #00D1ED;">CU</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">18%</div>
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">15%</div>
-                </div>
-                <div>
-                    <div style="font-size: 14px; font-weight: 800; color: #D22D49;">FF</div>
-                    <div style="font-size: 14px; font-weight: 800; color: #1C1C1E; margin-top: 2px;">12%</div>
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; margin-top: 2px;">22%</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            st.markdown('<div style="font-weight: 700; font-size: 16px; color: #1C1C1E; margin-bottom: 5px;">Pitch Sequence</div>', unsafe_allow_html=True)
-            
-            pitch_seq = pd.DataFrame({
-                "#": [1, 2, 3],
-                "Pitch": ["SI", "CU", "FC"],
-                "Result": ["Ball In Dirt", "Called Strike", "In play, out(s)"],
-                "Vel": [86.9, 78.3, 86.6],
-                "Spin": [2206, 2225, 2203],
-                "IVB": [6, -5, 8],
-                "HB": [1, 5, 2],
-                "Stuff+": [92, 108, 98]
-            })
-
-            def color_pitches(val):
-                colors = {'SI': '#FF8200', 'CU': '#00D1ED', 'FC': '#933F2C', 'FF': '#D22D49', 'CH': '#1DBE3A', 'SL': '#E3E1A6'}
-                color = colors.get(val, '#1C1C1E')
-                return f'color: {color}; font-weight: 800;'
-
-            styled_seq = pitch_seq.style.map(color_pitches, subset=['Pitch']) \
-                .background_gradient(subset=['Stuff+'], cmap='coolwarm', vmin=70, vmax=130) \
-                .format({"Vel": "{:.1f}", "Stuff+": "{:.0f}"})
-
-            st.dataframe(
-                styled_seq, 
-                hide_index=True, 
-                use_container_width=True,
-                column_config={"#": st.column_config.NumberColumn(width="small")}
-            )
 
     with tab2:
         st.info("Scoreboard components will load here.")
