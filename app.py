@@ -26,7 +26,7 @@ st.markdown("""
 with st.sidebar:
     st.title("🐍 Databacks")
     page = st.radio("Menu", ["Live Game", "The Lab", "Farm System", "Articles"])
-    st.caption("UI Prototype v17.0 - UI Restored & Custom Models")
+    st.caption("UI Prototype v18.0 - Universal Gradients")
 
 # --- TEAM COLOR DICTIONARY ---
 TEAM_COLORS = {
@@ -41,19 +41,16 @@ TEAM_COLORS = {
 
 # --- CUSTOM ANALYTIC MODELS ---
 def calc_stuff_plus(pitch_code, velo):
-    """Simplified Stuff+ Model (Avg 100, SD 5) weighting Velo and Break variance."""
+    """Stuff+ Model (Avg 100, SD 5) weighting Velo variance."""
     if velo == '-' or velo is None: return 100
     v = float(velo)
-    if pitch_code in ['FF', 'SI', 'FC']:
-        return int(100 + (v - 93.0) * 1.5)
-    elif pitch_code in ['CU', 'SL', 'ST', 'SV']:
-        return int(100 + (v - 83.0) * 1.2)
-    elif pitch_code in ['CH', 'FS']:
-        return int(100 + (v - 85.0) * 1.0)
+    if pitch_code in ['FF', 'SI', 'FC']: return int(100 + (v - 93.0) * 1.5)
+    elif pitch_code in ['CU', 'SL', 'ST', 'SV']: return int(100 + (v - 83.0) * 1.2)
+    elif pitch_code in ['CH', 'FS']: return int(100 + (v - 85.0) * 1.0)
     return 100
 
 def calc_xwoba(season_stats):
-    """Calculates season wOBA to proxy xwOBA."""
+    """Calculates season wOBA to proxy xwOBA via FanGraphs weights."""
     bb = season_stats.get('baseOnBalls', 0)
     hbp = season_stats.get('hitByPitch', 0)
     h = season_stats.get('hits', 0)
@@ -66,19 +63,45 @@ def calc_xwoba(season_stats):
     woba = (0.69*bb + 0.72*hbp + 0.89*singles + 1.27*d + 1.62*t + 2.1*hr) / pa
     return woba
 
-def get_color_pill(val, metric_type):
-    """Generates the Savant Red/Blue gradient CSS pill."""
-    if metric_type == 'xwoba':
-        if val >= .380: color, bg = "white", "#D22D49" # Elite Red
-        elif val <= .300: color, bg = "#1C1C1E", "#B4C6E7" # Poor Blue
-        else: color, bg = "#1C1C1E", "#E5E5EA" # Avg Gray
-        return f'<span style="color: {color}; background-color: {bg}; padding: 2px 6px; border-radius: 4px;">.{int(val*1000):03d}</span>'
-    elif metric_type == 'stuff':
-        if val >= 110: color, bg = "white", "#D22D49"
-        elif val <= 90: color, bg = "#1C1C1E", "#B4C6E7"
-        else: color, bg = "#1C1C1E", "#E5E5EA"
-        return f'<span style="color: {color}; background-color: {bg}; padding: 2px 6px; border-radius: 4px;">{val}</span>'
-    return f'<span style="color: #1C1C1E; background-color: #E5E5EA; padding: 2px 6px; border-radius: 4px;">{val}</span>'
+def get_color_pill(val, metric_type, font_size="12px"):
+    """Generates the universal Savant Red/Blue gradient CSS pill."""
+    if val in ['--', '-', None, ''] or pd.isna(val):
+        return f'<span style="font-size: {font_size}; font-family: -apple-system, sans-serif; font-weight: 800; color: #8E8E93; background-color: #E5E5EA; padding: 2px 6px; border-radius: 4px;">--</span>'
+    
+    color, bg = "#1C1C1E", "#E5E5EA" # Default Gray
+    try:
+        v = float(val)
+        # Thresholds: (Red Boundary, Blue Boundary, Higher_Is_Red)
+        thresholds = {
+            'xwoba': (0.380, 0.300, True),
+            'stuff': (105, 95, True), # SD of 5
+            'ev': (95.0, 85.0, True),
+            'k_pct_b': (15.0, 25.0, False), # Low K% is RED for batter
+            'k_pct_p': (25.0, 15.0, True),  # High K% is RED for pitcher
+            'bb_pct_b': (10.0, 5.0, True),
+            'bb_pct_p': (5.0, 10.0, False),
+            'avg': (0.280, 0.220, True)
+        }
+        
+        if metric_type in thresholds:
+            t_red, t_blue, higher_is_red = thresholds[metric_type]
+            if higher_is_red:
+                if v >= t_red: color, bg = "white", "#D22D49" # Deep Red
+                elif v <= t_blue: color, bg = "white", "#2A64C5" # Deep Blue
+            else:
+                if v <= t_red: color, bg = "white", "#D22D49" 
+                elif v >= t_blue: color, bg = "white", "#2A64C5"
+        
+        # Formatting Output
+        if metric_type in ['k_pct_b', 'k_pct_p', 'bb_pct_b', 'bb_pct_p']: formatted_val = f"{v:.1f}%"
+        elif metric_type in ['xwoba', 'avg']: formatted_val = f".{int(v*1000):03d}"
+        elif metric_type in ['ev']: formatted_val = f"{v:.1f}"
+        elif metric_type == 'stuff': formatted_val = f"{int(v)}"
+        else: formatted_val = str(val)
+            
+        return f'<span style="font-size: {font_size}; font-family: -apple-system, sans-serif; font-weight: 800; color: {color}; background-color: {bg}; padding: 2px 6px; border-radius: 4px;">{formatted_val}</span>'
+    except Exception:
+        return f'<span style="font-size: {font_size}; font-weight: 800; color: #1C1C1E; background-color: #E5E5EA; padding: 2px 6px; border-radius: 4px;">{val}</span>'
 
 # 4. MLB STATS-API ENGINE
 @st.cache_data(ttl=60) 
@@ -102,7 +125,7 @@ def fetch_mlb_game_data(selected_date):
                 
         game_pk = target_game.get('gamePk')
         
-        # Fetch Play-by-Play (We get abbreviations here to ensure accuracy)
+        # Fetch Play-by-Play & Teams
         pbp_url = f"https://statsapi.mlb.com/api/v1.1/game/{game_pk}/feed/live"
         pbp_resp = requests.get(pbp_url).json()
         
@@ -116,6 +139,7 @@ def fetch_mlb_game_data(selected_date):
         all_plays = pbp_resp.get('liveData', {}).get('plays', {}).get('allPlays', [])
         valid_plays = [p for p in all_plays if 'matchup' in p and 'result' in p]
         
+        # Fetch Boxscore Stats
         boxscore = pbp_resp.get('liveData', {}).get('boxscore', {}).get('teams', {})
         players_data = {}
         for team_type in ['away', 'home']:
@@ -172,7 +196,7 @@ if page == "Live Game":
         away_score = active_play['result']['awayScore']
         home_score = active_play['result']['homeScore']
         
-        # Determine active team colors
+        # Team Colors Restored
         if half_inning == 'top':
             batter_color = TEAM_COLORS.get(away_abbr, '#1C1C1E')
             pitcher_color = TEAM_COLORS.get(home_abbr, '#1C1C1E')
@@ -186,35 +210,49 @@ if page == "Live Game":
         current_inning_num = active_play['about']['inning']
         current_atBatIndex = active_play['about']['atBatIndex']
         
-        # Get Pre-At-Bat Outs
+        # Calculate Accurate Pre-Play Outs
         start_outs = 0
         for p in plays:
             if p['about']['halfInning'] == half_inning and p['about']['inning'] == current_inning_num and p['about']['atBatIndex'] < current_atBatIndex:
                 start_outs = p.get('count', {}).get('outs', 0)
 
-        # --- PARSE PLAYER BOXSCORE DATA ---
+        # --- PARSE PLAYER BOXSCORE DATA FOR GRIDS ---
         b_data = players_data.get(batter_id, {})
         p_data = players_data.get(pitcher_id, {})
         
-        # Batter Stats
         b_ab = b_data.get('game_bat', {}).get('atBats', 0)
         b_h = b_data.get('game_bat', {}).get('hits', 0)
         b_bb = b_data.get('game_bat', {}).get('baseOnBalls', 0)
         b_k = b_data.get('game_bat', {}).get('strikeOuts', 0)
-        b_avg = b_data.get('season_bat', {}).get('avg', '.000')
+        
+        b_avg_raw = b_data.get('season_bat', {}).get('avg', '.000')
+        b_avg_float = float(b_avg_raw) if b_avg_raw.replace('.','').isdigit() else 0.0
+        b_season_h = b_data.get('season_bat', {}).get('hits', 0)
+        b_season_bb = b_data.get('season_bat', {}).get('baseOnBalls', 0)
+        b_season_k = b_data.get('season_bat', {}).get('strikeOuts', 0)
         b_season_pa = b_data.get('season_bat', {}).get('plateAppearances', 1)
         b_season_pa = 1 if b_season_pa == 0 else b_season_pa
         
-        # Pitcher Stats
+        b_bb_pct_raw = (b_season_bb / b_season_pa) * 100
+        b_k_pct_raw = (b_season_k / b_season_pa) * 100
+
         p_ip = p_data.get('game_pitch', {}).get('inningsPitched', '0.0')
         p_k = p_data.get('game_pitch', {}).get('strikeOuts', 0)
         p_bb = p_data.get('game_pitch', {}).get('baseOnBalls', 0)
+        
         p_season_ip = p_data.get('season_pitch', {}).get('inningsPitched', '0.0')
+        p_season_k = p_data.get('season_pitch', {}).get('strikeOuts', 0)
+        p_season_bb = p_data.get('season_pitch', {}).get('baseOnBalls', 0)
+        p_season_bf = p_data.get('season_pitch', {}).get('battersFaced', 1)
+        p_season_bf = 1 if p_season_bf == 0 else p_season_bf
+        
+        p_k_pct_raw = (p_season_k / p_season_bf) * 100
+        p_bb_pct_raw = (p_season_bb / p_season_bf) * 100
 
-        # --- APPLY CUSTOM ANALYTIC MODELS ---
         xwOBA_val = calc_xwoba(b_data.get('season_bat', {}))
         xwoba_pill = get_color_pill(xwOBA_val, 'xwoba')
 
+        # --- LIVE GAME AGGREGATIONS ---
         batter_evs = []
         batter_game_whiffs = 0
         pitcher_game_whiffs = 0
@@ -222,12 +260,10 @@ if page == "Live Game":
         
         for p in plays:
             if p['about']['atBatIndex'] <= current_atBatIndex:
-                # Batter
                 if p['matchup']['batter']['id'] == batter_id:
                     for e in p.get('playEvents', []):
                         if 'hitData' in e and 'launchSpeed' in e['hitData']: batter_evs.append(e['hitData']['launchSpeed'])
                         if e.get('details', {}).get('description', '') in ['Swinging Strike', 'Swinging Strike (Blocked)']: batter_game_whiffs += 1
-                # Pitcher
                 if p['matchup']['pitcher']['id'] == pitcher_id:
                     for e in p.get('playEvents', []):
                         if e.get('isPitch'): pitcher_pitches.append(e)
@@ -236,20 +272,17 @@ if page == "Live Game":
         batter_avg_ev = round(sum(batter_evs)/len(batter_evs), 1) if batter_evs else "--"
         live_pitch_count = len(pitcher_pitches)
 
-        # --- SMART NAME PARSER ---
         def get_last_name(full_name):
             parts = full_name.split(' ')
             if len(parts) > 1 and parts[-1] in ['Jr.', 'Sr.', 'II', 'III', 'IV']: return f"{parts[-2]} {parts[-1]}"
             return parts[-1]
 
-        # --- INNING SUMMARY (Restored EV/xBA) ---
+        # --- INNING SUMMARY ---
         inning_plays = [p for p in plays if p['about']['inning'] == current_inning_num and p['about']['halfInning'] == half_inning and p['about']['atBatIndex'] <= current_atBatIndex]
         inning_summary_html = ""
         for i, p in enumerate(inning_plays):
             b_name = get_last_name(p['matchup']['batter']['fullName'])
             result_event = p['result'].get('event', 'In Progress')
-            
-            # Find the exit velo for the final play if it exists
             final_ev = '--'
             for e in p.get('playEvents', []):
                 if 'hitData' in e and 'launchSpeed' in e['hitData']: final_ev = e['hitData']['launchSpeed']
@@ -259,14 +292,14 @@ if page == "Live Game":
                 <div style="font-size: 13px; font-weight: 800; color: {batter_color}; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     <span style="color: #8E8E93; font-weight: 700; margin-right: 6px;">{i+1}</span>{b_name} <span style="font-size: 11px; font-weight: 600; color: #1C1C1E; margin-left: 6px;">{result_event}</span>
                 </div>
-                <div style="display: flex; gap: 15px; text-align: right; flex-shrink: 0;">
-                    <div style="font-size: 12px; font-weight: 700; color: #1C1C1E; width: 35px;">{final_ev}</div>
-                    <div style="font-size: 12px; font-weight: 700; color: #8E8E93; width: 35px;">--</div>
+                <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
+                    <div style="width: 35px; text-align: center;">{get_color_pill(final_ev, 'ev', '11px')}</div>
+                    <div style="width: 35px; text-align: center;">{get_color_pill('--', 'xwoba', '11px')}</div>
                 </div>
             </div>
             """
 
-        # --- PITCH USAGE & SEQUENCE (Restored Season Context) ---
+        # --- PITCH USAGE & SEQUENCE ---
         pitch_counts, pitch_velos = {}, {}
         pitch_colors = {'FF': '#D22D49', 'SI': '#FF8200', 'FC': '#933F2C', 'CU': '#00D1ED', 'SL': '#E3E1A6', 'CH': '#1DBE3A', 'FS': '#1DBE3A', 'ST': '#E3E1A6', 'SV': '#E3E1A6'}
         
@@ -313,7 +346,7 @@ if page == "Live Game":
             p_color = pitch_colors.get(p_code, '#1C1C1E')
             
             stuff_score = calc_stuff_plus(p_code, p_velo)
-            stuff_pill = get_color_pill(stuff_score, 'stuff')
+            stuff_pill = get_color_pill(stuff_score, 'stuff', '12px')
             
             if pX is not None and pZ is not None:
                 plot_pitches.append({'x': pX, 'z': pZ, 'color': p_color, 'num': i+1})
@@ -393,9 +426,9 @@ if page == "Live Game":
             <div style="border-left: 1px solid #E5E5EA; padding: 10px 20px; display: flex; flex-direction: column; min-width: 320px; background-color: #FAFAFA; overflow-y: auto;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <div style="font-size: 11px; font-weight: 800; color: #8E8E93; text-transform: uppercase;">Inning Summary</div>
-                    <div style="display: flex; gap: 15px; text-align: right;">
-                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93; width: 35px;">EV</div>
-                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93; width: 35px;">xBA</div>
+                    <div style="display: flex; gap: 15px; text-align: right; margin-right: 5px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93; width: 35px; text-align: center;">EV</div>
+                        <div style="font-size: 11px; font-weight: 700; color: #8E8E93; width: 35px; text-align: center;">xBA</div>
                     </div>
                 </div>
                 {inning_summary_html}
@@ -473,32 +506,32 @@ if page == "Live Game":
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">AB</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{b_ab}</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">{b_avg}</div>
+                    <div style="margin-top: 4px;">{get_color_pill(b_avg_float, 'avg')}</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">H</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{b_h}</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">--</div>
+                    <div style="font-size: 13px; font-weight: 700; color: #8E8E93; margin-top: 4px;">{b_season_h}</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">BB</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{b_bb}</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; margin-top: 2px;">--</div>
+                    <div style="margin-top: 4px;">{get_color_pill(b_bb_pct_raw, 'bb_pct_b')}</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">K</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{b_k}</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; margin-top: 2px;">--</div>
+                    <div style="margin-top: 4px;">{get_color_pill(b_k_pct_raw, 'k_pct_b')}</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">AVG EV</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{batter_avg_ev}</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; margin-top: 2px;">--</div>
+                    <div style="margin-top: 4px;">{get_color_pill('--', 'ev')}</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">WHIFFS</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{batter_game_whiffs}</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; margin-top: 2px;">--</div>
+                    <div style="margin-top: 4px;">{get_color_pill('--', 'whiff_b')}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -520,22 +553,22 @@ if page == "Live Game":
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">K</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{p_k}</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; margin-top: 2px;">--</div>
+                    <div style="margin-top: 4px;">{get_color_pill(p_k_pct_raw, 'k_pct_p')}</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">BB</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{p_bb}</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; margin-top: 2px;">--</div>
+                    <div style="margin-top: 4px;">{get_color_pill(p_bb_pct_raw, 'bb_pct_p')}</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">WHIFFS</div>
                     <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{pitcher_game_whiffs}</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; margin-top: 2px;">--</div>
+                    <div style="margin-top: 4px;">{get_color_pill('--', 'whiff_p')}</div>
                 </div>
                 <div>
                     <div style="font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px;">STUFF+</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{get_color_pill(season_stuff_avg, 'stuff')}</div>
-                    <div style="font-size: 13px; font-weight: 800; color: #8E8E93; margin-top: 2px;">--</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #1C1C1E;">{season_stuff_avg}</div>
+                    <div style="margin-top: 4px;">{get_color_pill(season_stuff_avg, 'stuff')}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
