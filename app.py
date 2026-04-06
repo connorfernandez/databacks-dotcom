@@ -103,29 +103,83 @@ def fetch_daily_slate():
 
 @st.cache_data(ttl=3600) 
 def fetch_roster_resource():
-    """Verifies active status against MLB API."""
-    url = "https://statsapi.mlb.com/api/v1/teams/109/roster?rosterType=active"
+    """Verifies active status and pulls LIVE season stats from the MLB API."""
+    roster_url = "https://statsapi.mlb.com/api/v1/teams/109/roster?rosterType=active"
+    
     try:
-        res = requests.get(url, timeout=10).json()
-        active_players = [item['person']['fullName'] for item in res.get('roster', [])]
+        # 1. Get the Active Roster and extract their secret MLB Player IDs
+        roster_res = requests.get(roster_url, timeout=10).json()
+        active_players = {}
+        for item in roster_res.get('roster', []):
+            active_players[item['person']['fullName']] = item['person']['id']
+            
+        # 2. Batch request the LIVE season stats for all active players
+        ids_string = ",".join(str(pid) for pid in active_players.values())
+        stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching],type=[season])"
+        stats_res = requests.get(stats_url, timeout=10).json()
         
-        def verify_player(p_dict):
+        # 3. Parse the data
+        live_stats = {}
+        for person in stats_res.get('people', []):
+            name = person['fullName']
+            stats_list = person.get('stats', [])
+            player_data = {}
+            for stat_obj in stats_list:
+                if stat_obj['type']['displayName'] == 'season':
+                    s = stat_obj['splits'][0]['stat'] if stat_obj['splits'] else {}
+                    
+                    if stat_obj['group']['displayName'] == 'hitting':
+                        player_data['avg'] = s.get('avg', '.000')
+                        player_data['hr'] = s.get('homeRuns', 0)
+                        player_data['rbi'] = s.get('rbi', 0)
+                        player_data['ops'] = s.get('ops', '.000')
+                        
+                    elif stat_obj['group']['displayName'] == 'pitching':
+                        player_data['era'] = s.get('era', '0.00')
+                        player_data['whip'] = s.get('whip', '0.00')
+                        tbf = s.get('battersFaced', 1)
+                        k = s.get('strikeOuts', 0)
+                        bb = s.get('baseOnBalls', 0)
+                        # Calculate K% and BB% dynamically
+                        player_data['k'] = f"{int((k / max(tbf, 1)) * 100)}%"
+                        player_data['bb'] = f"{int((bb / max(tbf, 1)) * 100)}%"
+                        
+            live_stats[name] = player_data
+            
+        # 4. Merge the live data seamlessly into your UI Depth Chart
+        def verify_player(p_dict, p_type="hitter"):
             clean_name = p_dict["name"].split(". ")[-1].split(" - ")[-1]
+            
+            # Inject Live MLB API Stats over the placeholders
+            if clean_name in live_stats and live_stats[clean_name]:
+                s = live_stats[clean_name]
+                if p_type == "hitter":
+                    p_dict['avg'] = s.get('avg', p_dict['avg'])
+                    p_dict['hr'] = s.get('hr', p_dict['hr'])
+                    p_dict['rbi'] = s.get('rbi', p_dict['rbi'])
+                    p_dict['ops'] = s.get('ops', p_dict['ops'])
+                elif p_type == "pitcher":
+                    p_dict['era'] = s.get('era', p_dict['era'])
+                    p_dict['whip'] = s.get('whip', p_dict['whip'])
+                    p_dict['k'] = s.get('k', p_dict['k'])
+                    p_dict['bb'] = s.get('bb', p_dict['bb'])
+            
+            # Tag guys sent to the minors or IL
             if clean_name not in active_players:
                 p_dict["name"] += " <span style='color: #FF3B30; font-size: 10px;'>🔴 IL/MINORS</span>"
             return p_dict
             
         return {
             "status": "Success",
-            "lineup": [verify_player(p.copy()) for p in DEPTH_CHART["lineup"]],
-            "bench": [verify_player(p.copy()) for p in DEPTH_CHART["bench"]],
-            "rotation": [verify_player(p.copy()) for p in DEPTH_CHART["rotation"]],
-            "bullpen": [verify_player(p.copy()) for p in DEPTH_CHART["bullpen"]],
+            "lineup": [verify_player(p.copy(), "hitter") for p in DEPTH_CHART["lineup"]],
+            "bench": [verify_player(p.copy(), "hitter") for p in DEPTH_CHART["bench"]],
+            "rotation": [verify_player(p.copy(), "pitcher") for p in DEPTH_CHART["rotation"]],
+            "bullpen": [verify_player(p.copy(), "pitcher") for p in DEPTH_CHART["bullpen"]],
             "injured": DEPTH_CHART["injured"]
         }
-    except:
+        
+    except Exception as e:
         return {"status": "Offline", **DEPTH_CHART}
-
 live_slate = fetch_daily_slate()
 roster_data = fetch_roster_resource()
 
