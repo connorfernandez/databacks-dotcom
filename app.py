@@ -10,14 +10,30 @@ st.set_page_config(page_title="Databacks | Home", layout="wide", initial_sidebar
 
 st.markdown("""
 <style>
+/* Base Theme */
 .stApp { background-color: #F2F2F7; color: #1C1C1E; font-family: -apple-system, sans-serif; }
 #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
 
-.slick-card { background-color: #FFFFFF; border-radius: 16px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); border: 1px solid #E5E5EA; margin-bottom: 16px; }
+/* Core Card Style */
+.slick-card { 
+    background-color: #FFFFFF; 
+    border-radius: 16px; 
+    padding: 20px; 
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05); 
+    border: 1px solid #E5E5EA; 
+    margin-bottom: 16px; 
+}
+
+/* D-Backs Accent Cards */
+.card-red { border-top: 4px solid #A71930; }
+.card-teal { border-top: 4px solid #30CED8; }
+.card-black { border-top: 4px solid #1C1C1E; }
+
+/* Typography */
 .section-title { font-size: 18px; font-weight: 800; color: #1C1C1E; margin-bottom: 12px; }
 .sub-text { font-size: 12px; font-weight: 600; color: #8E8E93; text-transform: uppercase; }
 
-/* Cleaned up Stat Row Text */
+/* Stat Row Text */
 .stat-shelf { font-size: 11px; color: #8E8E93; display: flex; justify-content: space-between; margin-top: 4px; font-weight: 600; }
 .stat-val { color: #1C1C1E; font-weight: 700; }
 </style>
@@ -75,7 +91,6 @@ DEPTH_CHART = {
 
 @st.cache_data(ttl=300) 
 def fetch_daily_slate():
-    """Fetches live schedule/scores from MLB Stats API."""
     az_tz = pytz.timezone('America/Phoenix')
     today = datetime.now(az_tz).strftime('%Y-%m-%d')
     team_ids = {"D-Backs": 109, "Aces (AAA)": 238, "Sod Poodles (AA)": 3251, "Hops (A+)": 425, "Rawhide (A)": 430}
@@ -103,22 +118,17 @@ def fetch_daily_slate():
 
 @st.cache_data(ttl=3600) 
 def fetch_roster_resource():
-    """Verifies active status and pulls LIVE season stats from the MLB API."""
     roster_url = "https://statsapi.mlb.com/api/v1/teams/109/roster?rosterType=active"
-    
     try:
-        # 1. Get the Active Roster and extract their secret MLB Player IDs
         roster_res = requests.get(roster_url, timeout=10).json()
         active_players = {}
         for item in roster_res.get('roster', []):
             active_players[item['person']['fullName']] = item['person']['id']
             
-        # 2. Batch request the LIVE season stats for all active players
         ids_string = ",".join(str(pid) for pid in active_players.values())
         stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching],type=[season])"
         stats_res = requests.get(stats_url, timeout=10).json()
         
-        # 3. Parse the data
         live_stats = {}
         for person in stats_res.get('people', []):
             name = person['fullName']
@@ -127,30 +137,23 @@ def fetch_roster_resource():
             for stat_obj in stats_list:
                 if stat_obj['type']['displayName'] == 'season':
                     s = stat_obj['splits'][0]['stat'] if stat_obj['splits'] else {}
-                    
                     if stat_obj['group']['displayName'] == 'hitting':
                         player_data['avg'] = s.get('avg', '.000')
                         player_data['hr'] = s.get('homeRuns', 0)
                         player_data['rbi'] = s.get('rbi', 0)
                         player_data['ops'] = s.get('ops', '.000')
-                        
                     elif stat_obj['group']['displayName'] == 'pitching':
                         player_data['era'] = s.get('era', '0.00')
                         player_data['whip'] = s.get('whip', '0.00')
                         tbf = s.get('battersFaced', 1)
                         k = s.get('strikeOuts', 0)
                         bb = s.get('baseOnBalls', 0)
-                        # Calculate K% and BB% dynamically
                         player_data['k'] = f"{int((k / max(tbf, 1)) * 100)}%"
                         player_data['bb'] = f"{int((bb / max(tbf, 1)) * 100)}%"
-                        
             live_stats[name] = player_data
             
-        # 4. Merge the live data seamlessly into your UI Depth Chart
         def verify_player(p_dict, p_type="hitter"):
             clean_name = p_dict["name"].split(". ")[-1].split(" - ")[-1]
-            
-            # Inject Live MLB API Stats over the placeholders
             if clean_name in live_stats and live_stats[clean_name]:
                 s = live_stats[clean_name]
                 if p_type == "hitter":
@@ -164,7 +167,6 @@ def fetch_roster_resource():
                     p_dict['k'] = s.get('k', p_dict['k'])
                     p_dict['bb'] = s.get('bb', p_dict['bb'])
             
-            # Tag guys sent to the minors or IL
             if clean_name not in active_players:
                 p_dict["name"] += " <span style='color: #FF3B30; font-size: 10px;'>🔴 IL/MINORS</span>"
             return p_dict
@@ -180,6 +182,7 @@ def fetch_roster_resource():
         
     except Exception as e:
         return {"status": "Offline", **DEPTH_CHART}
+
 live_slate = fetch_daily_slate()
 roster_data = fetch_roster_resource()
 
@@ -212,37 +215,41 @@ spotlight_html = (
 )
 st.markdown(spotlight_html, unsafe_allow_html=True)
 
+# 3-Column Layout
 col_hitters, col_pitchers, col_il = st.columns(3)
 
 def build_hitter_html(title, players):
-    items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #1C1C1E;">{title}</div>'
+    # Added Sedona Red text to the sub-header
+    items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #A71930;">{title}</div>'
     for p in players:
-        # Kept as a single string to avoid Streamlit markdown parsing errors
-        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px;">{p["name"]}</div><div class="stat-shelf"><span>AVG <span class="stat-val">{p["avg"]}</span></span><span>HR <span class="stat-val">{p["hr"]}</span></span><span>RBI <span class="stat-val">{p["rbi"]}</span></span><span>OPS <span class="stat-val">{p["ops"]}</span></span><span>wRC+ <span class="stat-val">{p["wrc"]}</span></span><span>WAR <span class="stat-val">{p["war"]}</span></span></div></div>'
-    return f'<div class="slick-card" style="padding: 0px; overflow: hidden;">{items}</div>'
+        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #1C1C1E;">{p["name"]}</div><div class="stat-shelf"><span>AVG <span class="stat-val">{p["avg"]}</span></span><span>HR <span class="stat-val">{p["hr"]}</span></span><span>RBI <span class="stat-val">{p["rbi"]}</span></span><span>OPS <span class="stat-val">{p["ops"]}</span></span><span>wRC+ <span class="stat-val">{p["wrc"]}</span></span><span>WAR <span class="stat-val">{p["war"]}</span></span></div></div>'
+    # Added .card-red class
+    return f'<div class="slick-card card-red" style="padding: 0px; overflow: hidden;">{items}</div>'
 
 def build_pitcher_html(title, players):
-    items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #1C1C1E;">{title}</div>'
+    # Added Teal text to the sub-header
+    items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #30CED8;">{title}</div>'
     for p in players:
-        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px;">{p["name"]}</div><div class="stat-shelf"><span>ERA <span class="stat-val">{p["era"]}</span></span><span>WHIP <span class="stat-val">{p["whip"]}</span></span><span>K% <span class="stat-val">{p["k"]}</span></span><span>BB% <span class="stat-val">{p["bb"]}</span></span><span>FIP <span class="stat-val">{p["fip"]}</span></span><span>WAR <span class="stat-val">{p["war"]}</span></span></div></div>'
-    return f'<div class="slick-card" style="padding: 0px; overflow: hidden;">{items}</div>'
+        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #1C1C1E;">{p["name"]}</div><div class="stat-shelf"><span>ERA <span class="stat-val">{p["era"]}</span></span><span>WHIP <span class="stat-val">{p["whip"]}</span></span><span>K% <span class="stat-val">{p["k"]}</span></span><span>BB% <span class="stat-val">{p["bb"]}</span></span><span>FIP <span class="stat-val">{p["fip"]}</span></span><span>WAR <span class="stat-val">{p["war"]}</span></span></div></div>'
+    # Added .card-teal class
+    return f'<div class="slick-card card-teal" style="padding: 0px; overflow: hidden;">{items}</div>'
 
 def build_il_html(title, players):
+    # Added Jet Black text to the sub-header
     items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #1C1C1E;">{title}</div>'
     for p in players:
-        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px;">{p["name"]}</div><div style="font-size: 11px; color: #8E8E93;">{p["injury"]}</div><div style="font-size: 11px; color: #D22D49; font-weight: 600; margin-top: 2px;">{p["eta"]}</div></div>'
-    return f'<div class="slick-card" style="padding: 0px; overflow: hidden;">{items}</div>'
+        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #1C1C1E;">{p["name"]}</div><div style="font-size: 11px; color: #8E8E93;">{p["injury"]}</div><div style="font-size: 11px; color: #D22D49; font-weight: 600; margin-top: 2px;">{p["eta"]}</div></div>'
+    # Added .card-black class
+    return f'<div class="slick-card card-black" style="padding: 0px; overflow: hidden;">{items}</div>'
 
+# Removed redundant section titles here
 with col_hitters:
-    st.markdown('<div class="section-title">Position Players</div>', unsafe_allow_html=True)
     st.markdown(build_hitter_html("Projected Lineup", roster_data['lineup']), unsafe_allow_html=True)
     st.markdown(build_hitter_html("Bench", roster_data['bench']), unsafe_allow_html=True)
 
 with col_pitchers:
-    st.markdown('<div class="section-title">Pitching Staff</div>', unsafe_allow_html=True)
     st.markdown(build_pitcher_html("Starting Rotation", roster_data['rotation']), unsafe_allow_html=True)
     st.markdown(build_pitcher_html("Bullpen", roster_data['bullpen']), unsafe_allow_html=True)
 
 with col_il:
-    st.markdown('<div class="section-title">Recovery Tracker</div>', unsafe_allow_html=True)
     st.markdown(build_il_html("Injured List", roster_data['injured']), unsafe_allow_html=True)
