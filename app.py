@@ -163,49 +163,20 @@ col_hitters, col_pitchers, col_il = st.columns(3)
 def build_hitter_html(title, players):
     items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #1C1C1E;">{title}</div>'
     for p in players:
-        items += f'''
-        <div style="padding: 10px; border-bottom: 1px solid #E5E5EA;">
-            <div style="font-size: 14px; font-weight: 700; margin-bottom: 2px;">{p["name"]}</div>
-            <div class="stat-shelf">
-                <span>AVG <span class="stat-val">{p['avg']}</span></span>
-                <span>HR <span class="stat-val">{p['hr']}</span></span>
-                <span>RBI <span class="stat-val">{p['rbi']}</span></span>
-                <span>OPS <span class="stat-val">{p['ops']}</span></span>
-                <span>wRC+ <span class="stat-val">{p['wrc']}</span></span>
-                <span>WAR <span class="stat-val">{p['war']}</span></span>
-            </div>
-        </div>
-        '''
+        # Kept as a single string to avoid Streamlit markdown parsing errors
+        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px;">{p["name"]}</div><div class="stat-shelf"><span>AVG <span class="stat-val">{p["avg"]}</span></span><span>HR <span class="stat-val">{p["hr"]}</span></span><span>RBI <span class="stat-val">{p["rbi"]}</span></span><span>OPS <span class="stat-val">{p["ops"]}</span></span><span>wRC+ <span class="stat-val">{p["wrc"]}</span></span><span>WAR <span class="stat-val">{p["war"]}</span></span></div></div>'
     return f'<div class="slick-card" style="padding: 0px; overflow: hidden;">{items}</div>'
 
 def build_pitcher_html(title, players):
     items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #1C1C1E;">{title}</div>'
     for p in players:
-        items += f'''
-        <div style="padding: 10px; border-bottom: 1px solid #E5E5EA;">
-            <div style="font-size: 14px; font-weight: 700; margin-bottom: 2px;">{p["name"]}</div>
-            <div class="stat-shelf">
-                <span>ERA <span class="stat-val">{p['era']}</span></span>
-                <span>WHIP <span class="stat-val">{p['whip']}</span></span>
-                <span>K% <span class="stat-val">{p['k']}</span></span>
-                <span>BB% <span class="stat-val">{p['bb']}</span></span>
-                <span>FIP <span class="stat-val">{p['fip']}</span></span>
-                <span>WAR <span class="stat-val">{p['war']}</span></span>
-            </div>
-        </div>
-        '''
+        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px;">{p["name"]}</div><div class="stat-shelf"><span>ERA <span class="stat-val">{p["era"]}</span></span><span>WHIP <span class="stat-val">{p["whip"]}</span></span><span>K% <span class="stat-val">{p["k"]}</span></span><span>BB% <span class="stat-val">{p["bb"]}</span></span><span>FIP <span class="stat-val">{p["fip"]}</span></span><span>WAR <span class="stat-val">{p["war"]}</span></span></div></div>'
     return f'<div class="slick-card" style="padding: 0px; overflow: hidden;">{items}</div>'
 
 def build_il_html(title, players):
     items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #1C1C1E;">{title}</div>'
     for p in players:
-        items += f'''
-        <div style="padding: 10px; border-bottom: 1px solid #E5E5EA;">
-            <div style="font-size: 14px; font-weight: 700; margin-bottom: 2px;">{p["name"]}</div>
-            <div style="font-size: 11px; color: #8E8E93;">{p["injury"]}</div>
-            <div style="font-size: 11px; color: #D22D49; font-weight: 600; margin-top: 2px;">{p["eta"]}</div>
-        </div>
-        '''
+        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px;">{p["name"]}</div><div style="font-size: 11px; color: #8E8E93;">{p["injury"]}</div><div style="font-size: 11px; color: #D22D49; font-weight: 600; margin-top: 2px;">{p["eta"]}</div></div>'
     return f'<div class="slick-card" style="padding: 0px; overflow: hidden;">{items}</div>'
 
 with col_hitters:
