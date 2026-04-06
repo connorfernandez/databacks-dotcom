@@ -2,8 +2,6 @@ import streamlit as st
 import requests
 from datetime import datetime
 import pytz
-import pandas as pd
-import io
 
 # ==========================================
 # 1. PAGE SETUP & UI CSS
@@ -45,6 +43,7 @@ st.markdown("""
 # 2. BACKEND DATA ENGINES (MANAGER'S DESK)
 # ==========================================
 
+# STRICTLY LOCKED TO 2026
 SIM_YEAR = 2026
 
 DEPTH_CHART = {
@@ -110,8 +109,9 @@ def fetch_daily_slate():
             slate.append({"name": name, "score": "Error", "hero": "API Failed"})
     return slate
 
+# Renamed function to completely bust the old Streamlit cache
 @st.cache_data(ttl=3600) 
-def fetch_roster_resource():
+def fetch_live_roster_stats():
     roster_url = "https://statsapi.mlb.com/api/v1/teams/109/roster?rosterType=active"
     try:
         roster_res = requests.get(roster_url, timeout=10).json()
@@ -121,8 +121,8 @@ def fetch_roster_resource():
             
         ids_string = ",".join(str(pid) for pid in active_players.values())
         
-        # 1. MLB API: Fetch Basic Stats
-        stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching],type=[season],season={SIM_YEAR})"
+        # 1. PURE MLB API CALL - STRICTLY 2026
+        stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching,statcast],type=[season,expectedStatistics],season={SIM_YEAR})"
         stats_res = requests.get(stats_url, timeout=10).json()
         
         live_stats = {}
@@ -132,68 +132,35 @@ def fetch_roster_resource():
             player_data = live_stats[name]
             
             for stat_obj in person.get('stats', []):
+                stat_type = stat_obj.get('type', {}).get('displayName', '').lower()
                 stat_group = stat_obj.get('group', {}).get('displayName', '').lower()
+                
                 for split in stat_obj.get('splits', []):
                     s = split.get('stat', {})
-                    if stat_group == 'hitting':
-                        player_data['avg'] = s.get('avg', '.000')
-                        player_data['hr'] = s.get('homeRuns', 0)
-                        player_data['rbi'] = s.get('rbi', 0)
-                        player_data['ops'] = s.get('ops', '.000')
-                    elif stat_group == 'pitching':
-                        player_data['era'] = s.get('era', '0.00')
-                        player_data['whip'] = s.get('whip', '0.00')
-                        player_data['ip'] = s.get('inningsPitched', '0.0')
-                        tbf = s.get('battersFaced', 1)
-                        k = s.get('strikeOuts', 0)
-                        bb = s.get('baseOnBalls', 0)
-                        player_data['k'] = f"{int((k / max(tbf, 1)) * 100)}%"
-                        player_data['bb'] = f"{int((bb / max(tbf, 1)) * 100)}%"
-
-        # 2. BASEBALL SAVANT: Fetch Expected Stats Directly from CSV Feed
-        try:
-            # We must trick Savant into thinking we are a real Chrome browser
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-            
-            # --- Hitters ---
-            bat_url = f"https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=batter&year={SIM_YEAR}&position=&team=109&csv=true"
-            bat_res = requests.get(bat_url, headers=headers, timeout=10)
-            bat_df = pd.read_csv(io.StringIO(bat_res.text))
-            
-            # Smart Fallback: If Savant returns an empty file because 2026 data isn't published on the web yet, grab the real current data.
-            if bat_df.empty or 'est_ba' not in bat_df.columns:
-                bat_url = "https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=batter&year=2024&position=&team=109&csv=true"
-                bat_res = requests.get(bat_url, headers=headers, timeout=10)
-                bat_df = pd.read_csv(io.StringIO(bat_res.text))
-
-            for _, row in bat_df.iterrows():
-                pid = row['player_id']
-                name = next((n for n, id_ in active_players.items() if id_ == pid), None)
-                if name and name in live_stats:
-                    if pd.notna(row['est_ba']):
-                        live_stats[name]['xba'] = f"{row['est_ba']:.3f}".lstrip('0')
-                    if pd.notna(row['est_woba']):
-                        live_stats[name]['xwoba'] = f"{row['est_woba']:.3f}".lstrip('0')
-                        
-            # --- Pitchers ---
-            pit_url = f"https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=pitcher&year={SIM_YEAR}&position=&team=109&csv=true"
-            pit_res = requests.get(pit_url, headers=headers, timeout=10)
-            pit_df = pd.read_csv(io.StringIO(pit_res.text))
-            
-            # Smart Fallback for Pitchers
-            if pit_df.empty or 'est_woba' not in pit_df.columns:
-                pit_url = "https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=pitcher&year=2024&position=&team=109&csv=true"
-                pit_res = requests.get(pit_url, headers=headers, timeout=10)
-                pit_df = pd.read_csv(io.StringIO(pit_res.text))
-
-            for _, row in pit_df.iterrows():
-                pid = row['player_id']
-                name = next((n for n, id_ in active_players.items() if id_ == pid), None)
-                if name and name in live_stats:
-                    if pd.notna(row['est_woba']):
-                        live_stats[name]['xwoba'] = f"{row['est_woba']:.3f}".lstrip('0')
-        except Exception as e:
-            pass
+                    if stat_type == 'season':
+                        if stat_group == 'hitting':
+                            player_data['avg'] = s.get('avg', '.000')
+                            player_data['hr'] = s.get('homeRuns', 0)
+                            player_data['rbi'] = s.get('rbi', 0)
+                            player_data['ops'] = s.get('ops', '.000')
+                        elif stat_group == 'pitching':
+                            player_data['era'] = s.get('era', '0.00')
+                            player_data['whip'] = s.get('whip', '0.00')
+                            player_data['ip'] = s.get('inningsPitched', '0.0')
+                            tbf = s.get('battersFaced', 1)
+                            k = s.get('strikeOuts', 0)
+                            bb = s.get('baseOnBalls', 0)
+                            player_data['k'] = f"{int((k / max(tbf, 1)) * 100)}%"
+                            player_data['bb'] = f"{int((bb / max(tbf, 1)) * 100)}%"
+                    elif stat_type == 'expectedstatistics':
+                        if 'estimatedBa' in s:
+                            try:
+                                player_data['xba'] = f"{float(s['estimatedBa']):.3f}".lstrip('0')
+                            except: pass
+                        if 'estimatedWoba' in s:
+                            try:
+                                player_data['xwoba'] = f"{float(s['estimatedWoba']):.3f}".lstrip('0')
+                            except: pass
 
         def build_player_dict(raw_name, p_type="hitter"):
             clean_name = raw_name.split(". ")[-1].split(" - ")[-1]
@@ -206,7 +173,7 @@ def fetch_roster_resource():
                 p_dict['hr'] = s.get('hr', '0')
                 p_dict['rbi'] = s.get('rbi', '0')
                 p_dict['ops'] = s.get('ops', '.000')
-                p_dict['xba'] = s.get('xba', '.000')
+                p_dict['xba'] = s.get('xba', '.000') # Minimum of .000 if not yet published
                 p_dict['xwoba'] = s.get('xwoba', '.000')
             elif p_type == "pitcher":
                 p_dict['era'] = s.get('era', '0.00')
@@ -239,7 +206,7 @@ def fetch_roster_resource():
         }
 
 live_slate = fetch_daily_slate()
-roster_data = fetch_roster_resource()
+roster_data = fetch_live_roster_stats()
 
 # ==========================================
 # 3. FRONTEND UI RENDERING
