@@ -110,17 +110,25 @@ def fetch_roster_resource():
             
         ids_string = ",".join(str(pid) for pid in active_players.values())
         
-        # 1. LIVE SEASON DATA ONLY - PULLS DIRECTLY FROM CURRENT YEAR
-        stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching,statcast],type=[season,expectedStatistics])"
+        # 1. LIVE SEASON DATA ONLY - explicitly passing the current year so expectedStatistics computes!
+        current_year = datetime.now(pytz.timezone('America/Phoenix')).year
+        stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching,statcast],type=[season,expectedStatistics],season={current_year})"
         stats_res = requests.get(stats_url, timeout=10).json()
         
         live_stats = {}
         
         def parse_expected(s_dict, p_data):
+            # Formats the decimal nicely and defaults to .000 if it's a flat zero
             if 'estimatedBa' in s_dict:
-                p_data['xba'] = str(s_dict['estimatedBa']).lstrip('0')
+                try:
+                    p_data['xba'] = f"{float(s_dict['estimatedBa']):.3f}".lstrip('0')
+                except:
+                    pass
             if 'estimatedWoba' in s_dict:
-                p_data['xwoba'] = str(s_dict['estimatedWoba']).lstrip('0')
+                try:
+                    p_data['xwoba'] = f"{float(s_dict['estimatedWoba']):.3f}".lstrip('0')
+                except:
+                    pass
 
         # Parse live data 
         for person in stats_res.get('people', []):
@@ -159,20 +167,21 @@ def fetch_roster_resource():
             
             s = live_stats.get(clean_name, {})
             
+            # Defaults to .000 instead of "---" so you always have a baseline 0
             if p_type == "hitter":
                 p_dict['avg'] = s.get('avg', '.000')
                 p_dict['hr'] = s.get('hr', '0')
                 p_dict['rbi'] = s.get('rbi', '0')
                 p_dict['ops'] = s.get('ops', '.000')
-                p_dict['xba'] = s.get('xba', '---')
-                p_dict['xwoba'] = s.get('xwoba', '---')
+                p_dict['xba'] = s.get('xba', '.000')
+                p_dict['xwoba'] = s.get('xwoba', '.000')
             elif p_type == "pitcher":
                 p_dict['era'] = s.get('era', '0.00')
                 p_dict['whip'] = s.get('whip', '0.00')
                 p_dict['ip'] = s.get('ip', '0.0')
                 p_dict['k'] = s.get('k', '0%')
                 p_dict['bb'] = s.get('bb', '0%')
-                p_dict['xwoba'] = s.get('xwoba', '---')
+                p_dict['xwoba'] = s.get('xwoba', '.000')
             
             if clean_name not in active_players:
                 p_dict["name"] += " <span style='color: #FF3B30; font-size: 10px;'>🔴 IL/MINORS</span>"
@@ -188,7 +197,8 @@ def fetch_roster_resource():
         }
         
     except Exception as e:
-        def dummy(n): return {"name": n, "avg": "---", "hr": "-", "rbi": "-", "ops": "---", "xba": "---", "xwoba": "---", "era": "---", "whip": "---", "ip": "---", "k": "-", "bb": "-"}
+        # Failsafe dummy data
+        def dummy(n): return {"name": n, "avg": ".000", "hr": "0", "rbi": "0", "ops": ".000", "xba": ".000", "xwoba": ".000", "era": "0.00", "whip": "0.00", "ip": "0.0", "k": "0%", "bb": "0%"}
         return {
             "status": "Offline",
             "lineup": [dummy(p) for p in DEPTH_CHART["lineup"]], "bench": [dummy(p) for p in DEPTH_CHART["bench"]],
