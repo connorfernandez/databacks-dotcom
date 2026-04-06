@@ -73,40 +73,36 @@ def fetch_daily_slate():
 
 @st.cache_data(ttl=3600) 
 def fetch_roster_resource():
-    """Scrapes FanGraphs D-Backs Depth Chart using Cloudscraper + Proxy Fallback."""
-    url = "https://www.fangraphs.com/roster-resource/depth-charts/diamondbacks"
+    """Fetches D-Backs active 26-man roster directly from the MLB Stats API."""
+    # Team 109 is the D-backs. 'rosterType=active' guarantees the live 26-man roster.
+    url = "https://statsapi.mlb.com/api/v1/teams/109/roster?rosterType=active"
     
     try:
-        # Strategy 1: Try Cloudscraper
-        scraper = cloudscraper.create_scraper()
-        html = scraper.get(url, timeout=10).text
+        res = requests.get(url, timeout=10).json()
+        roster = res.get('roster', [])
         
-        # Strategy 2: If Cloudflare blocked us (no tables in HTML), route through a proxy
-        if "<table" not in html.lower():
-            proxy_url = f"https://api.allorigins.win/raw?url={url}"
-            html = requests.get(proxy_url, timeout=10).text
-            
-        # Strategy 3: If BOTH fail, gracefully return a clean error instead of crashing the UI
-        if "<table" not in html.lower():
-            return {
-                "status": "Failed", 
-                "lineup": ["FanGraphs blocked connection.", "Check back later."], 
-                "rotation": ["Blocked by Security"], 
-                "bullpen": ["Blocked by Security"]
-            }
-            
-        # Parse the tables
-        dfs = pd.read_html(html)
+        lineup = []
+        pitchers = []
         
+        # Sort players by position
+        for item in roster:
+            name = item['person']['fullName']
+            pos = item['position']['abbreviation']
+            
+            # Catch Pitchers (P) and Two-Way Players (TWP)
+            if pos in ['P', 'SP', 'RP', 'TWP']:
+                pitchers.append(name)
+            else:
+                lineup.append(f"{name} ({pos})")
+                
         return {
             "status": "Success",
-            "lineup": dfs[0]['Player'].dropna().tolist()[:9] if len(dfs) > 0 else ["Lineup Not Found"],
-            "rotation": dfs[1]['Player'].dropna().tolist()[:5] if len(dfs) > 1 else ["Rotation Not Found"],
-            "bullpen": dfs[2]['Player'].dropna().tolist()[:8] if len(dfs) > 2 else ["Bullpen Not Found"]
+            "lineup": lineup if lineup else ["Lineup Not Found"],
+            "rotation": pitchers[:5] if pitchers else ["Rotation Not Found"],
+            "bullpen": pitchers[5:] if len(pitchers) > 5 else ["Bullpen Not Found"]
         }
         
     except Exception as e:
-        # Ultimate fallback to prevent the app from ever showing Python errors
         return {"status": "Failed", "lineup": ["Data temporarily unavailable"], "rotation": ["Error"], "bullpen": ["Error"]}
 # Run fetchers
 live_slate = fetch_daily_slate()
