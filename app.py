@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from datetime import datetime
 import pytz
+import pandas as pd
 
 # ==========================================
 # 1. PAGE SETUP & UI CSS
@@ -43,6 +44,8 @@ st.markdown("""
 # 2. BACKEND DATA ENGINES (MANAGER'S DESK)
 # ==========================================
 
+SIM_YEAR = 2026
+
 DEPTH_CHART = {
     "lineup": [
         "1. Corbin Carroll", "2. Ketel Marte", "3. Geraldo Perdomo", 
@@ -75,7 +78,14 @@ DEPTH_CHART = {
 @st.cache_data(ttl=300) 
 def fetch_daily_slate():
     az_tz = pytz.timezone('America/Phoenix')
-    today = datetime.now(az_tz).strftime('%Y-%m-%d')
+    az_time = datetime.now(az_tz)
+    
+    try:
+        sim_date = az_time.replace(year=SIM_YEAR)
+    except ValueError:
+        sim_date = az_time.replace(year=SIM_YEAR, day=28)
+        
+    today = sim_date.strftime('%Y-%m-%d')
     team_ids = {"D-Backs": 109, "Aces (AAA)": 238, "Sod Poodles (AA)": 3251, "Hops (A+)": 425, "Rawhide (A)": 430}
     slate = []
     
@@ -110,64 +120,68 @@ def fetch_roster_resource():
             
         ids_string = ",".join(str(pid) for pid in active_players.values())
         
-        # 1. LIVE SEASON DATA ONLY - explicitly passing the current year so expectedStatistics computes!
-        current_year = datetime.now(pytz.timezone('America/Phoenix')).year
-        stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching,statcast],type=[season,expectedStatistics],season={current_year})"
+        # 1. MLB API: Fetch Basic Stats
+        stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching],type=[season],season={SIM_YEAR})"
         stats_res = requests.get(stats_url, timeout=10).json()
         
         live_stats = {}
-        
-        def parse_expected(s_dict, p_data):
-            # Formats the decimal nicely and defaults to .000 if it's a flat zero
-            if 'estimatedBa' in s_dict:
-                try:
-                    p_data['xba'] = f"{float(s_dict['estimatedBa']):.3f}".lstrip('0')
-                except:
-                    pass
-            if 'estimatedWoba' in s_dict:
-                try:
-                    p_data['xwoba'] = f"{float(s_dict['estimatedWoba']):.3f}".lstrip('0')
-                except:
-                    pass
-
-        # Parse live data 
         for person in stats_res.get('people', []):
             name = person['fullName']
-            if name not in live_stats:
-                live_stats[name] = {}
+            live_stats[name] = {}
             player_data = live_stats[name]
             
             for stat_obj in person.get('stats', []):
-                stat_type = stat_obj.get('type', {}).get('displayName', '').lower()
                 stat_group = stat_obj.get('group', {}).get('displayName', '').lower()
-                
                 for split in stat_obj.get('splits', []):
                     s = split.get('stat', {})
-                    if stat_type == 'season':
-                        if stat_group == 'hitting':
-                            player_data['avg'] = s.get('avg', player_data.get('avg', '.000'))
-                            player_data['hr'] = s.get('homeRuns', player_data.get('hr', 0))
-                            player_data['rbi'] = s.get('rbi', player_data.get('rbi', 0))
-                            player_data['ops'] = s.get('ops', player_data.get('ops', '.000'))
-                        elif stat_group == 'pitching':
-                            player_data['era'] = s.get('era', player_data.get('era', '0.00'))
-                            player_data['whip'] = s.get('whip', player_data.get('whip', '0.00'))
-                            player_data['ip'] = s.get('inningsPitched', player_data.get('ip', '0.0'))
-                            tbf = s.get('battersFaced', 1)
-                            k = s.get('strikeOuts', 0)
-                            bb = s.get('baseOnBalls', 0)
-                            player_data['k'] = f"{int((k / max(tbf, 1)) * 100)}%"
-                            player_data['bb'] = f"{int((bb / max(tbf, 1)) * 100)}%"
-                    elif 'expected' in stat_type:
-                        parse_expected(s, player_data)
-        
+                    if stat_group == 'hitting':
+                        player_data['avg'] = s.get('avg', '.000')
+                        player_data['hr'] = s.get('homeRuns', 0)
+                        player_data['rbi'] = s.get('rbi', 0)
+                        player_data['ops'] = s.get('ops', '.000')
+                    elif stat_group == 'pitching':
+                        player_data['era'] = s.get('era', '0.00')
+                        player_data['whip'] = s.get('whip', '0.00')
+                        player_data['ip'] = s.get('inningsPitched', '0.0')
+                        tbf = s.get('battersFaced', 1)
+                        k = s.get('strikeOuts', 0)
+                        bb = s.get('baseOnBalls', 0)
+                        player_data['k'] = f"{int((k / max(tbf, 1)) * 100)}%"
+                        player_data['bb'] = f"{int((bb / max(tbf, 1)) * 100)}%"
+
+        # 2. BASEBALL SAVANT: Fetch Expected Stats Directly from CSV Feed
+        try:
+            # Hitters
+            bat_url = f"https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=batter&year={SIM_YEAR}&position=&team=109&csv=true"
+            bat_df = pd.read_csv(bat_url)
+            for _, row in bat_df.iterrows():
+                pid = row['player_id']
+                name = next((n for n, id_ in active_players.items() if id_ == pid), None)
+                if name and name in live_stats:
+                    if pd.notna(row['est_ba']):
+                        live_stats[name]['xba'] = f"{row['est_ba']:.3f}".lstrip('0')
+                    if pd.notna(row['est_woba']):
+                        live_stats[name]['xwoba'] = f"{row['est_woba']:.3f}".lstrip('0')
+                        
+            # Pitchers
+            pit_url = f"https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=pitcher&year={SIM_YEAR}&position=&team=109&csv=true"
+            pit_df = pd.read_csv(pit_url)
+            for _, row in pit_df.iterrows():
+                pid = row['player_id']
+                name = next((n for n, id_ in active_players.items() if id_ == pid), None)
+                if name and name in live_stats:
+                    if pd.notna(row['est_woba']):
+                        live_stats[name]['xwoba'] = f"{row['est_woba']:.3f}".lstrip('0')
+        except Exception as e:
+            # Silently fallback to .000 if Savant is down
+            pass
+
         def build_player_dict(raw_name, p_type="hitter"):
             clean_name = raw_name.split(". ")[-1].split(" - ")[-1]
             p_dict = {"name": raw_name}
             
             s = live_stats.get(clean_name, {})
             
-            # Defaults to .000 instead of "---" so you always have a baseline 0
             if p_type == "hitter":
                 p_dict['avg'] = s.get('avg', '.000')
                 p_dict['hr'] = s.get('hr', '0')
@@ -197,7 +211,6 @@ def fetch_roster_resource():
         }
         
     except Exception as e:
-        # Failsafe dummy data
         def dummy(n): return {"name": n, "avg": ".000", "hr": "0", "rbi": "0", "ops": ".000", "xba": ".000", "xwoba": ".000", "era": "0.00", "whip": "0.00", "ip": "0.0", "k": "0%", "bb": "0%"}
         return {
             "status": "Offline",
@@ -214,7 +227,12 @@ roster_data = fetch_roster_resource()
 # ==========================================
 
 az_tz = pytz.timezone('America/Phoenix')
-display_date = datetime.now(az_tz).strftime("%B %d, %Y")
+az_time = datetime.now(az_tz)
+try:
+    display_date = az_time.replace(year=SIM_YEAR).strftime("%B %d, %Y")
+except ValueError:
+    display_date = az_time.replace(year=SIM_YEAR, day=28).strftime("%B %d, %Y")
+    
 st.markdown(f'<div class="section-title">The Daily Slate ({display_date})</div>', unsafe_allow_html=True)
 slate_cols = st.columns(5)
 
