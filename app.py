@@ -73,12 +73,29 @@ def fetch_daily_slate():
 
 @st.cache_data(ttl=3600) 
 def fetch_roster_resource():
-    """Scrapes FanGraphs D-Backs Depth Chart using Cloudscraper."""
+    """Scrapes FanGraphs D-Backs Depth Chart using Cloudscraper + Proxy Fallback."""
     url = "https://www.fangraphs.com/roster-resource/depth-charts/diamondbacks"
     
     try:
+        # Strategy 1: Try Cloudscraper
         scraper = cloudscraper.create_scraper()
-        html = scraper.get(url).text
+        html = scraper.get(url, timeout=10).text
+        
+        # Strategy 2: If Cloudflare blocked us (no tables in HTML), route through a proxy
+        if "<table" not in html.lower():
+            proxy_url = f"https://api.allorigins.win/raw?url={url}"
+            html = requests.get(proxy_url, timeout=10).text
+            
+        # Strategy 3: If BOTH fail, gracefully return a clean error instead of crashing the UI
+        if "<table" not in html.lower():
+            return {
+                "status": "Failed", 
+                "lineup": ["FanGraphs blocked connection.", "Check back later."], 
+                "rotation": ["Blocked by Security"], 
+                "bullpen": ["Blocked by Security"]
+            }
+            
+        # Parse the tables
         dfs = pd.read_html(html)
         
         return {
@@ -87,9 +104,10 @@ def fetch_roster_resource():
             "rotation": dfs[1]['Player'].dropna().tolist()[:5] if len(dfs) > 1 else ["Rotation Not Found"],
             "bullpen": dfs[2]['Player'].dropna().tolist()[:8] if len(dfs) > 2 else ["Bullpen Not Found"]
         }
+        
     except Exception as e:
-        return {"status": "Failed", "lineup": [f"Scrape Error: {e}"], "rotation": ["Error"], "bullpen": ["Error"]}
-
+        # Ultimate fallback to prevent the app from ever showing Python errors
+        return {"status": "Failed", "lineup": ["Data temporarily unavailable"], "rotation": ["Error"], "bullpen": ["Error"]}
 # Run fetchers
 live_slate = fetch_daily_slate()
 roster_data = fetch_roster_resource()
