@@ -3,6 +3,7 @@ import requests
 from datetime import datetime
 import pytz
 import pandas as pd
+import io
 
 # ==========================================
 # 1. PAGE SETUP & UI CSS
@@ -151,9 +152,20 @@ def fetch_roster_resource():
 
         # 2. BASEBALL SAVANT: Fetch Expected Stats Directly from CSV Feed
         try:
-            # Hitters
+            # We must trick Savant into thinking we are a real Chrome browser
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+            
+            # --- Hitters ---
             bat_url = f"https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=batter&year={SIM_YEAR}&position=&team=109&csv=true"
-            bat_df = pd.read_csv(bat_url)
+            bat_res = requests.get(bat_url, headers=headers, timeout=10)
+            bat_df = pd.read_csv(io.StringIO(bat_res.text))
+            
+            # Smart Fallback: If Savant returns an empty file because 2026 data isn't published on the web yet, grab the real current data.
+            if bat_df.empty or 'est_ba' not in bat_df.columns:
+                bat_url = "https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=batter&year=2024&position=&team=109&csv=true"
+                bat_res = requests.get(bat_url, headers=headers, timeout=10)
+                bat_df = pd.read_csv(io.StringIO(bat_res.text))
+
             for _, row in bat_df.iterrows():
                 pid = row['player_id']
                 name = next((n for n, id_ in active_players.items() if id_ == pid), None)
@@ -163,9 +175,17 @@ def fetch_roster_resource():
                     if pd.notna(row['est_woba']):
                         live_stats[name]['xwoba'] = f"{row['est_woba']:.3f}".lstrip('0')
                         
-            # Pitchers
+            # --- Pitchers ---
             pit_url = f"https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=pitcher&year={SIM_YEAR}&position=&team=109&csv=true"
-            pit_df = pd.read_csv(pit_url)
+            pit_res = requests.get(pit_url, headers=headers, timeout=10)
+            pit_df = pd.read_csv(io.StringIO(pit_res.text))
+            
+            # Smart Fallback for Pitchers
+            if pit_df.empty or 'est_woba' not in pit_df.columns:
+                pit_url = "https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=pitcher&year=2024&position=&team=109&csv=true"
+                pit_res = requests.get(pit_url, headers=headers, timeout=10)
+                pit_df = pd.read_csv(io.StringIO(pit_res.text))
+
             for _, row in pit_df.iterrows():
                 pid = row['player_id']
                 name = next((n for n, id_ in active_players.items() if id_ == pid), None)
@@ -173,7 +193,6 @@ def fetch_roster_resource():
                     if pd.notna(row['est_woba']):
                         live_stats[name]['xwoba'] = f"{row['est_woba']:.3f}".lstrip('0')
         except Exception as e:
-            # Silently fallback to .000 if Savant is down
             pass
 
         def build_player_dict(raw_name, p_type="hitter"):
