@@ -43,7 +43,6 @@ st.markdown("""
 # 2. BACKEND DATA ENGINES (MANAGER'S DESK)
 # ==========================================
 
-# Cleaned up! You only type names here now. The API finds their stats automatically.
 DEPTH_CHART = {
     "lineup": [
         "1. Corbin Carroll", "2. Ketel Marte", "3. Geraldo Perdomo", 
@@ -111,45 +110,49 @@ def fetch_roster_resource():
             
         ids_string = ",".join(str(pid) for pid in active_players.values())
         
-        # HYDRATING WITH 'expectedStatistics' PULLS STATCAST DATA LIKE xBA and xwOBA!
-        stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching],type=[season,expectedStatistics])"
+        # 1. LIVE SEASON DATA ONLY - PULLS DIRECTLY FROM CURRENT YEAR
+        stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching,statcast],type=[season,expectedStatistics])"
         stats_res = requests.get(stats_url, timeout=10).json()
         
         live_stats = {}
+        
+        def parse_expected(s_dict, p_data):
+            if 'estimatedBa' in s_dict:
+                p_data['xba'] = str(s_dict['estimatedBa']).lstrip('0')
+            if 'estimatedWoba' in s_dict:
+                p_data['xwoba'] = str(s_dict['estimatedWoba']).lstrip('0')
+
+        # Parse live data 
         for person in stats_res.get('people', []):
             name = person['fullName']
-            stats_list = person.get('stats', [])
-            player_data = {}
-            for stat_obj in stats_list:
-                stat_type = stat_obj['type']['displayName']
-                stat_group = stat_obj['group']['displayName']
-                s = stat_obj['splits'][0]['stat'] if stat_obj['splits'] else {}
-                
-                if stat_group == 'hitting':
-                    if stat_type == 'season':
-                        player_data['avg'] = s.get('avg', '.000')
-                        player_data['hr'] = s.get('homeRuns', 0)
-                        player_data['rbi'] = s.get('rbi', 0)
-                        player_data['ops'] = s.get('ops', '.000')
-                    elif stat_type == 'expectedStatistics':
-                        player_data['xba'] = s.get('estimatedBa', '---')
-                        player_data['xwoba'] = s.get('estimatedWoba', '---')
-                        
-                elif stat_group == 'pitching':
-                    if stat_type == 'season':
-                        player_data['era'] = s.get('era', '0.00')
-                        player_data['whip'] = s.get('whip', '0.00')
-                        player_data['ip'] = s.get('inningsPitched', '0.0')
-                        tbf = s.get('battersFaced', 1)
-                        k = s.get('strikeOuts', 0)
-                        bb = s.get('baseOnBalls', 0)
-                        player_data['k'] = f"{int((k / max(tbf, 1)) * 100)}%"
-                        player_data['bb'] = f"{int((bb / max(tbf, 1)) * 100)}%"
-                    elif stat_type == 'expectedStatistics':
-                        player_data['xwoba'] = s.get('estimatedWoba', '---')
-                        
-            live_stats[name] = player_data
+            if name not in live_stats:
+                live_stats[name] = {}
+            player_data = live_stats[name]
             
+            for stat_obj in person.get('stats', []):
+                stat_type = stat_obj.get('type', {}).get('displayName', '').lower()
+                stat_group = stat_obj.get('group', {}).get('displayName', '').lower()
+                
+                for split in stat_obj.get('splits', []):
+                    s = split.get('stat', {})
+                    if stat_type == 'season':
+                        if stat_group == 'hitting':
+                            player_data['avg'] = s.get('avg', player_data.get('avg', '.000'))
+                            player_data['hr'] = s.get('homeRuns', player_data.get('hr', 0))
+                            player_data['rbi'] = s.get('rbi', player_data.get('rbi', 0))
+                            player_data['ops'] = s.get('ops', player_data.get('ops', '.000'))
+                        elif stat_group == 'pitching':
+                            player_data['era'] = s.get('era', player_data.get('era', '0.00'))
+                            player_data['whip'] = s.get('whip', player_data.get('whip', '0.00'))
+                            player_data['ip'] = s.get('inningsPitched', player_data.get('ip', '0.0'))
+                            tbf = s.get('battersFaced', 1)
+                            k = s.get('strikeOuts', 0)
+                            bb = s.get('baseOnBalls', 0)
+                            player_data['k'] = f"{int((k / max(tbf, 1)) * 100)}%"
+                            player_data['bb'] = f"{int((bb / max(tbf, 1)) * 100)}%"
+                    elif 'expected' in stat_type:
+                        parse_expected(s, player_data)
+        
         def build_player_dict(raw_name, p_type="hitter"):
             clean_name = raw_name.split(". ")[-1].split(" - ")[-1]
             p_dict = {"name": raw_name}
@@ -161,15 +164,15 @@ def fetch_roster_resource():
                 p_dict['hr'] = s.get('hr', '0')
                 p_dict['rbi'] = s.get('rbi', '0')
                 p_dict['ops'] = s.get('ops', '.000')
-                p_dict['xba'] = str(s.get('xba', '---')).lstrip('0') # formatting decimals
-                p_dict['xwoba'] = str(s.get('xwoba', '---')).lstrip('0')
+                p_dict['xba'] = s.get('xba', '---')
+                p_dict['xwoba'] = s.get('xwoba', '---')
             elif p_type == "pitcher":
                 p_dict['era'] = s.get('era', '0.00')
                 p_dict['whip'] = s.get('whip', '0.00')
                 p_dict['ip'] = s.get('ip', '0.0')
                 p_dict['k'] = s.get('k', '0%')
                 p_dict['bb'] = s.get('bb', '0%')
-                p_dict['xwoba'] = str(s.get('xwoba', '---')).lstrip('0')
+                p_dict['xwoba'] = s.get('xwoba', '---')
             
             if clean_name not in active_players:
                 p_dict["name"] += " <span style='color: #FF3B30; font-size: 10px;'>🔴 IL/MINORS</span>"
@@ -185,7 +188,6 @@ def fetch_roster_resource():
         }
         
     except Exception as e:
-        # Failsafe dummy data generator so the UI never crashes
         def dummy(n): return {"name": n, "avg": "---", "hr": "-", "rbi": "-", "ops": "---", "xba": "---", "xwoba": "---", "era": "---", "whip": "---", "ip": "---", "k": "-", "bb": "-"}
         return {
             "status": "Offline",
