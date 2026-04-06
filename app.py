@@ -43,40 +43,24 @@ st.markdown("""
 # 2. BACKEND DATA ENGINES (MANAGER'S DESK)
 # ==========================================
 
+# Cleaned up! You only type names here now. The API finds their stats automatically.
 DEPTH_CHART = {
     "lineup": [
-        {"name": "1. Corbin Carroll", "avg": ".285", "hr": 2, "rbi": 5, "ops": ".890", "wrc": 135, "war": 0.4},
-        {"name": "2. Ketel Marte", "avg": ".310", "hr": 3, "rbi": 8, "ops": ".945", "wrc": 150, "war": 0.6},
-        {"name": "3. Geraldo Perdomo", "avg": ".250", "hr": 0, "rbi": 2, "ops": ".710", "wrc": 95, "war": 0.1},
-        {"name": "4. Gabriel Moreno", "avg": ".295", "hr": 1, "rbi": 7, "ops": ".820", "wrc": 115, "war": 0.3},
-        {"name": "5. Adrian Del Castillo", "avg": ".220", "hr": 1, "rbi": 3, "ops": ".680", "wrc": 88, "war": 0.0},
-        {"name": "6. Nolan Arenado", "avg": ".265", "hr": 2, "rbi": 6, "ops": ".790", "wrc": 105, "war": 0.2},
-        {"name": "7. Carlos Santana", "avg": ".240", "hr": 1, "rbi": 4, "ops": ".740", "wrc": 102, "war": 0.1},
-        {"name": "8. Alek Thomas", "avg": ".270", "hr": 0, "rbi": 1, "ops": ".705", "wrc": 90, "war": 0.1},
-        {"name": "9. Tim Tawa", "avg": ".210", "hr": 0, "rbi": 0, "ops": ".600", "wrc": 70, "war": -0.1}
+        "1. Corbin Carroll", "2. Ketel Marte", "3. Geraldo Perdomo", 
+        "4. Gabriel Moreno", "5. Adrian Del Castillo", "6. Nolan Arenado", 
+        "7. Carlos Santana", "8. Alek Thomas", "9. Tim Tawa"
     ],
     "bench": [
-        {"name": "James McCann", "avg": ".200", "hr": 0, "rbi": 1, "ops": ".550", "wrc": 60, "war": 0.0},
-        {"name": "Jose Fernandez", "avg": ".000", "hr": 0, "rbi": 0, "ops": ".000", "wrc": 0, "war": 0.0},
-        {"name": "Ildemaro Vargas", "avg": ".250", "hr": 0, "rbi": 0, "ops": ".650", "wrc": 85, "war": 0.0},
-        {"name": "Jorge Barrosa", "avg": ".222", "hr": 0, "rbi": 2, "ops": ".620", "wrc": 80, "war": 0.0}
+        "James McCann", "Jose Fernandez", "Ildemaro Vargas", "Jorge Barrosa"
     ],
     "rotation": [
-        {"name": "1. Zac Gallen", "era": "3.12", "whip": "1.05", "k": "26%", "bb": "6%", "fip": "3.40", "war": 0.4},
-        {"name": "2. Ryne Nelson", "era": "4.20", "whip": "1.25", "k": "20%", "bb": "8%", "fip": "4.15", "war": 0.1},
-        {"name": "3. Eduardo Rodriguez", "era": "3.85", "whip": "1.18", "k": "22%", "bb": "7%", "fip": "3.90", "war": 0.2},
-        {"name": "4. Michael Soroka", "era": "4.05", "whip": "1.30", "k": "19%", "bb": "9%", "fip": "4.30", "war": 0.1},
-        {"name": "5. Brandon Pfaadt", "era": "3.60", "whip": "1.12", "k": "24%", "bb": "5%", "fip": "3.75", "war": 0.3}
+        "1. Zac Gallen", "2. Ryne Nelson", "3. Eduardo Rodriguez", 
+        "4. Michael Soroka", "5. Brandon Pfaadt"
     ],
     "bullpen": [
-        {"name": "CL - Paul Sewald", "era": "2.10", "whip": "0.95", "k": "31%", "bb": "8%", "fip": "2.80", "war": 0.2},
-        {"name": "SU - Jonathan Loáisiga", "era": "2.80", "whip": "1.10", "k": "23%", "bb": "6%", "fip": "3.10", "war": 0.1},
-        {"name": "SU - Juan Morillo", "era": "3.20", "whip": "1.15", "k": "25%", "bb": "9%", "fip": "3.40", "war": 0.1},
-        {"name": "MID - Taylor Clarke", "era": "4.50", "whip": "1.35", "k": "18%", "bb": "7%", "fip": "4.20", "war": 0.0},
-        {"name": "MID - Ryan Thompson", "era": "3.00", "whip": "1.08", "k": "21%", "bb": "5%", "fip": "3.25", "war": 0.1},
-        {"name": "MID - Andrew Hoffmann", "era": "4.10", "whip": "1.28", "k": "20%", "bb": "8%", "fip": "4.00", "war": 0.0},
-        {"name": "MID - Kevin Ginkel", "era": "2.90", "whip": "1.02", "k": "28%", "bb": "7%", "fip": "2.95", "war": 0.2},
-        {"name": "LR - Taylor Rashi", "era": "4.80", "whip": "1.40", "k": "17%", "bb": "10%", "fip": "4.60", "war": -0.1}
+        "CL - Paul Sewald", "SU - Jonathan Loáisiga", "SU - Juan Morillo", 
+        "MID - Taylor Clarke", "MID - Ryan Thompson", "MID - Andrew Hoffmann", 
+        "MID - Kevin Ginkel", "LR - Taylor Rashi"
     ],
     "injured": [
         {"name": "Corbin Burnes", "injury": "60-Day IL • Tommy John", "eta": "ETA: July 2026"},
@@ -126,7 +110,9 @@ def fetch_roster_resource():
             active_players[item['person']['fullName']] = item['person']['id']
             
         ids_string = ",".join(str(pid) for pid in active_players.values())
-        stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching],type=[season])"
+        
+        # HYDRATING WITH 'expectedStatistics' PULLS STATCAST DATA LIKE xBA and xwOBA!
+        stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching],type=[season,expectedStatistics])"
         stats_res = requests.get(stats_url, timeout=10).json()
         
         live_stats = {}
@@ -135,37 +121,55 @@ def fetch_roster_resource():
             stats_list = person.get('stats', [])
             player_data = {}
             for stat_obj in stats_list:
-                if stat_obj['type']['displayName'] == 'season':
-                    s = stat_obj['splits'][0]['stat'] if stat_obj['splits'] else {}
-                    if stat_obj['group']['displayName'] == 'hitting':
+                stat_type = stat_obj['type']['displayName']
+                stat_group = stat_obj['group']['displayName']
+                s = stat_obj['splits'][0]['stat'] if stat_obj['splits'] else {}
+                
+                if stat_group == 'hitting':
+                    if stat_type == 'season':
                         player_data['avg'] = s.get('avg', '.000')
                         player_data['hr'] = s.get('homeRuns', 0)
                         player_data['rbi'] = s.get('rbi', 0)
                         player_data['ops'] = s.get('ops', '.000')
-                    elif stat_obj['group']['displayName'] == 'pitching':
+                    elif stat_type == 'expectedStatistics':
+                        player_data['xba'] = s.get('estimatedBa', '---')
+                        player_data['xwoba'] = s.get('estimatedWoba', '---')
+                        
+                elif stat_group == 'pitching':
+                    if stat_type == 'season':
                         player_data['era'] = s.get('era', '0.00')
                         player_data['whip'] = s.get('whip', '0.00')
+                        player_data['ip'] = s.get('inningsPitched', '0.0')
                         tbf = s.get('battersFaced', 1)
                         k = s.get('strikeOuts', 0)
                         bb = s.get('baseOnBalls', 0)
                         player_data['k'] = f"{int((k / max(tbf, 1)) * 100)}%"
                         player_data['bb'] = f"{int((bb / max(tbf, 1)) * 100)}%"
+                    elif stat_type == 'expectedStatistics':
+                        player_data['xwoba'] = s.get('estimatedWoba', '---')
+                        
             live_stats[name] = player_data
             
-        def verify_player(p_dict, p_type="hitter"):
-            clean_name = p_dict["name"].split(". ")[-1].split(" - ")[-1]
-            if clean_name in live_stats and live_stats[clean_name]:
-                s = live_stats[clean_name]
-                if p_type == "hitter":
-                    p_dict['avg'] = s.get('avg', p_dict['avg'])
-                    p_dict['hr'] = s.get('hr', p_dict['hr'])
-                    p_dict['rbi'] = s.get('rbi', p_dict['rbi'])
-                    p_dict['ops'] = s.get('ops', p_dict['ops'])
-                elif p_type == "pitcher":
-                    p_dict['era'] = s.get('era', p_dict['era'])
-                    p_dict['whip'] = s.get('whip', p_dict['whip'])
-                    p_dict['k'] = s.get('k', p_dict['k'])
-                    p_dict['bb'] = s.get('bb', p_dict['bb'])
+        def build_player_dict(raw_name, p_type="hitter"):
+            clean_name = raw_name.split(". ")[-1].split(" - ")[-1]
+            p_dict = {"name": raw_name}
+            
+            s = live_stats.get(clean_name, {})
+            
+            if p_type == "hitter":
+                p_dict['avg'] = s.get('avg', '.000')
+                p_dict['hr'] = s.get('hr', '0')
+                p_dict['rbi'] = s.get('rbi', '0')
+                p_dict['ops'] = s.get('ops', '.000')
+                p_dict['xba'] = str(s.get('xba', '---')).lstrip('0') # formatting decimals
+                p_dict['xwoba'] = str(s.get('xwoba', '---')).lstrip('0')
+            elif p_type == "pitcher":
+                p_dict['era'] = s.get('era', '0.00')
+                p_dict['whip'] = s.get('whip', '0.00')
+                p_dict['ip'] = s.get('ip', '0.0')
+                p_dict['k'] = s.get('k', '0%')
+                p_dict['bb'] = s.get('bb', '0%')
+                p_dict['xwoba'] = str(s.get('xwoba', '---')).lstrip('0')
             
             if clean_name not in active_players:
                 p_dict["name"] += " <span style='color: #FF3B30; font-size: 10px;'>🔴 IL/MINORS</span>"
@@ -173,15 +177,22 @@ def fetch_roster_resource():
             
         return {
             "status": "Success",
-            "lineup": [verify_player(p.copy(), "hitter") for p in DEPTH_CHART["lineup"]],
-            "bench": [verify_player(p.copy(), "hitter") for p in DEPTH_CHART["bench"]],
-            "rotation": [verify_player(p.copy(), "pitcher") for p in DEPTH_CHART["rotation"]],
-            "bullpen": [verify_player(p.copy(), "pitcher") for p in DEPTH_CHART["bullpen"]],
+            "lineup": [build_player_dict(p, "hitter") for p in DEPTH_CHART["lineup"]],
+            "bench": [build_player_dict(p, "hitter") for p in DEPTH_CHART["bench"]],
+            "rotation": [build_player_dict(p, "pitcher") for p in DEPTH_CHART["rotation"]],
+            "bullpen": [build_player_dict(p, "pitcher") for p in DEPTH_CHART["bullpen"]],
             "injured": DEPTH_CHART["injured"]
         }
         
     except Exception as e:
-        return {"status": "Offline", **DEPTH_CHART}
+        # Failsafe dummy data generator so the UI never crashes
+        def dummy(n): return {"name": n, "avg": "---", "hr": "-", "rbi": "-", "ops": "---", "xba": "---", "xwoba": "---", "era": "---", "whip": "---", "ip": "---", "k": "-", "bb": "-"}
+        return {
+            "status": "Offline",
+            "lineup": [dummy(p) for p in DEPTH_CHART["lineup"]], "bench": [dummy(p) for p in DEPTH_CHART["bench"]],
+            "rotation": [dummy(p) for p in DEPTH_CHART["rotation"]], "bullpen": [dummy(p) for p in DEPTH_CHART["bullpen"]],
+            "injured": DEPTH_CHART["injured"]
+        }
 
 live_slate = fetch_daily_slate()
 roster_data = fetch_roster_resource()
@@ -215,34 +226,26 @@ spotlight_html = (
 )
 st.markdown(spotlight_html, unsafe_allow_html=True)
 
-# 3-Column Layout
 col_hitters, col_pitchers, col_il = st.columns(3)
 
 def build_hitter_html(title, players):
-    # Added Sedona Red text to the sub-header
     items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #A71930;">{title}</div>'
     for p in players:
-        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #1C1C1E;">{p["name"]}</div><div class="stat-shelf"><span>AVG <span class="stat-val">{p["avg"]}</span></span><span>HR <span class="stat-val">{p["hr"]}</span></span><span>RBI <span class="stat-val">{p["rbi"]}</span></span><span>OPS <span class="stat-val">{p["ops"]}</span></span><span>wRC+ <span class="stat-val">{p["wrc"]}</span></span><span>WAR <span class="stat-val">{p["war"]}</span></span></div></div>'
-    # Added .card-red class
+        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #1C1C1E;">{p["name"]}</div><div class="stat-shelf"><span>AVG <span class="stat-val">{p["avg"]}</span></span><span>HR <span class="stat-val">{p["hr"]}</span></span><span>RBI <span class="stat-val">{p["rbi"]}</span></span><span>OPS <span class="stat-val">{p["ops"]}</span></span><span>xBA <span class="stat-val">{p["xba"]}</span></span><span>xwOBA <span class="stat-val">{p["xwoba"]}</span></span></div></div>'
     return f'<div class="slick-card card-red" style="padding: 0px; overflow: hidden;">{items}</div>'
 
 def build_pitcher_html(title, players):
-    # Added Teal text to the sub-header
     items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #30CED8;">{title}</div>'
     for p in players:
-        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #1C1C1E;">{p["name"]}</div><div class="stat-shelf"><span>ERA <span class="stat-val">{p["era"]}</span></span><span>WHIP <span class="stat-val">{p["whip"]}</span></span><span>K% <span class="stat-val">{p["k"]}</span></span><span>BB% <span class="stat-val">{p["bb"]}</span></span><span>FIP <span class="stat-val">{p["fip"]}</span></span><span>WAR <span class="stat-val">{p["war"]}</span></span></div></div>'
-    # Added .card-teal class
+        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #1C1C1E;">{p["name"]}</div><div class="stat-shelf"><span>ERA <span class="stat-val">{p["era"]}</span></span><span>WHIP <span class="stat-val">{p["whip"]}</span></span><span>IP <span class="stat-val">{p["ip"]}</span></span><span>K% <span class="stat-val">{p["k"]}</span></span><span>BB% <span class="stat-val">{p["bb"]}</span></span><span>xwOBA <span class="stat-val">{p["xwoba"]}</span></span></div></div>'
     return f'<div class="slick-card card-teal" style="padding: 0px; overflow: hidden;">{items}</div>'
 
 def build_il_html(title, players):
-    # Added Jet Black text to the sub-header
     items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #1C1C1E;">{title}</div>'
     for p in players:
         items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #1C1C1E;">{p["name"]}</div><div style="font-size: 11px; color: #8E8E93;">{p["injury"]}</div><div style="font-size: 11px; color: #D22D49; font-weight: 600; margin-top: 2px;">{p["eta"]}</div></div>'
-    # Added .card-black class
     return f'<div class="slick-card card-black" style="padding: 0px; overflow: hidden;">{items}</div>'
 
-# Removed redundant section titles here
 with col_hitters:
     st.markdown(build_hitter_html("Projected Lineup", roster_data['lineup']), unsafe_allow_html=True)
     st.markdown(build_hitter_html("Bench", roster_data['bench']), unsafe_allow_html=True)
