@@ -43,7 +43,7 @@ st.markdown("""
 # 2. BACKEND DATA ENGINES (MANAGER'S DESK)
 # ==========================================
 
-# STRICTLY LOCKED TO 2026
+# STRICTLY LOCKED TO 2026 - NO FALLBACKS
 SIM_YEAR = 2026
 
 DEPTH_CHART = {
@@ -109,7 +109,6 @@ def fetch_daily_slate():
             slate.append({"name": name, "score": "Error", "hero": "API Failed"})
     return slate
 
-# Renamed function to completely bust the old Streamlit cache
 @st.cache_data(ttl=3600) 
 def fetch_live_roster_stats():
     roster_url = "https://statsapi.mlb.com/api/v1/teams/109/roster?rosterType=active"
@@ -121,7 +120,7 @@ def fetch_live_roster_stats():
             
         ids_string = ",".join(str(pid) for pid in active_players.values())
         
-        # 1. PURE MLB API CALL - STRICTLY 2026
+        # PURE MLB API CALL - STRICTLY LOCKED TO 2026
         stats_url = f"https://statsapi.mlb.com/api/v1/people?personIds={ids_string}&hydrate=stats(group=[hitting,pitching,statcast],type=[season,expectedStatistics],season={SIM_YEAR})"
         stats_res = requests.get(stats_url, timeout=10).json()
         
@@ -153,13 +152,17 @@ def fetch_live_roster_stats():
                             player_data['k'] = f"{int((k / max(tbf, 1)) * 100)}%"
                             player_data['bb'] = f"{int((bb / max(tbf, 1)) * 100)}%"
                     elif stat_type == 'expectedstatistics':
-                        if 'estimatedBa' in s:
-                            try:
-                                player_data['xba'] = f"{float(s['estimatedBa']):.3f}".lstrip('0')
-                            except: pass
                         if 'estimatedWoba' in s:
                             try:
                                 player_data['xwoba'] = f"{float(s['estimatedWoba']):.3f}".lstrip('0')
+                            except: pass
+                        if 'estimatedEra' in s:
+                            try:
+                                player_data['xera'] = f"{float(s['estimatedEra']):.2f}"
+                            except: pass
+                        elif 'estimatedEarnedRunAverage' in s:
+                            try:
+                                player_data['xera'] = f"{float(s['estimatedEarnedRunAverage']):.2f}"
                             except: pass
 
         def build_player_dict(raw_name, p_type="hitter"):
@@ -173,15 +176,14 @@ def fetch_live_roster_stats():
                 p_dict['hr'] = s.get('hr', '0')
                 p_dict['rbi'] = s.get('rbi', '0')
                 p_dict['ops'] = s.get('ops', '.000')
-                p_dict['xba'] = s.get('xba', '.000') # Minimum of .000 if not yet published
-                p_dict['xwoba'] = s.get('xwoba', '.000')
+                p_dict['xwoba'] = s.get('xwoba', '.000') 
             elif p_type == "pitcher":
                 p_dict['era'] = s.get('era', '0.00')
                 p_dict['whip'] = s.get('whip', '0.00')
                 p_dict['ip'] = s.get('ip', '0.0')
                 p_dict['k'] = s.get('k', '0%')
                 p_dict['bb'] = s.get('bb', '0%')
-                p_dict['xwoba'] = s.get('xwoba', '.000')
+                p_dict['xera'] = s.get('xera', '0.00')
             
             if clean_name not in active_players:
                 p_dict["name"] += " <span style='color: #FF3B30; font-size: 10px;'>🔴 IL/MINORS</span>"
@@ -197,7 +199,7 @@ def fetch_live_roster_stats():
         }
         
     except Exception as e:
-        def dummy(n): return {"name": n, "avg": ".000", "hr": "0", "rbi": "0", "ops": ".000", "xba": ".000", "xwoba": ".000", "era": "0.00", "whip": "0.00", "ip": "0.0", "k": "0%", "bb": "0%"}
+        def dummy(n): return {"name": n, "avg": ".000", "hr": "0", "rbi": "0", "ops": ".000", "xwoba": ".000", "era": "0.00", "whip": "0.00", "ip": "0.0", "k": "0%", "bb": "0%", "xera": "0.00"}
         return {
             "status": "Offline",
             "lineup": [dummy(p) for p in DEPTH_CHART["lineup"]], "bench": [dummy(p) for p in DEPTH_CHART["bench"]],
@@ -247,13 +249,13 @@ col_hitters, col_pitchers, col_il = st.columns(3)
 def build_hitter_html(title, players):
     items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #A71930;">{title}</div>'
     for p in players:
-        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #1C1C1E;">{p["name"]}</div><div class="stat-shelf"><span>AVG <span class="stat-val">{p["avg"]}</span></span><span>HR <span class="stat-val">{p["hr"]}</span></span><span>RBI <span class="stat-val">{p["rbi"]}</span></span><span>OPS <span class="stat-val">{p["ops"]}</span></span><span>xBA <span class="stat-val">{p["xba"]}</span></span><span>xwOBA <span class="stat-val">{p["xwoba"]}</span></span></div></div>'
+        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #1C1C1E;">{p["name"]}</div><div class="stat-shelf"><span>AVG <span class="stat-val">{p["avg"]}</span></span><span>HR <span class="stat-val">{p["hr"]}</span></span><span>RBI <span class="stat-val">{p["rbi"]}</span></span><span>OPS <span class="stat-val">{p["ops"]}</span></span><span>xwOBA <span class="stat-val">{p["xwoba"]}</span></span></div></div>'
     return f'<div class="slick-card card-red" style="padding: 0px; overflow: hidden;">{items}</div>'
 
 def build_pitcher_html(title, players):
     items = f'<div style="padding: 10px; background-color: #F9F9F9; border-bottom: 1px solid #E5E5EA; font-weight: 800; font-size: 14px; color: #30CED8;">{title}</div>'
     for p in players:
-        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #1C1C1E;">{p["name"]}</div><div class="stat-shelf"><span>ERA <span class="stat-val">{p["era"]}</span></span><span>WHIP <span class="stat-val">{p["whip"]}</span></span><span>IP <span class="stat-val">{p["ip"]}</span></span><span>K% <span class="stat-val">{p["k"]}</span></span><span>BB% <span class="stat-val">{p["bb"]}</span></span><span>xwOBA <span class="stat-val">{p["xwoba"]}</span></span></div></div>'
+        items += f'<div style="padding: 10px; border-bottom: 1px solid #E5E5EA;"><div style="font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #1C1C1E;">{p["name"]}</div><div class="stat-shelf"><span>ERA <span class="stat-val">{p["era"]}</span></span><span>WHIP <span class="stat-val">{p["whip"]}</span></span><span>IP <span class="stat-val">{p["ip"]}</span></span><span>K% <span class="stat-val">{p["k"]}</span></span><span>BB% <span class="stat-val">{p["bb"]}</span></span><span>xERA <span class="stat-val">{p["xera"]}</span></span></div></div>'
     return f'<div class="slick-card card-teal" style="padding: 0px; overflow: hidden;">{items}</div>'
 
 def build_il_html(title, players):
@@ -270,5 +272,7 @@ with col_pitchers:
     st.markdown(build_pitcher_html("Starting Rotation", roster_data['rotation']), unsafe_allow_html=True)
     st.markdown(build_pitcher_html("Bullpen", roster_data['bullpen']), unsafe_allow_html=True)
 
+with col_il:
+    st.markdown(build_il_html("Injured List", roster_data['injured']), unsafe_allow_html=True)
 with col_il:
     st.markdown(build_il_html("Injured List", roster_data['injured']), unsafe_allow_html=True)
